@@ -1,5 +1,5 @@
 import path from 'path';
-import { getJson } from './json-file-reader';
+import { getJson } from './file-reader';
 import { schemaValidator } from './schema-validator';
 import { prettyLog } from './logger';
 
@@ -10,12 +10,12 @@ export interface ValidationResult {
 
 export const validateJsons = async (
     sourceDir: string,
-    schemaRelativePath: string,
+    schemaPath: string,
     jsonRelativePaths: string[]
 ): Promise<ValidationResult[]> => {
-    const schemaPath = path.join(sourceDir, schemaRelativePath);
+    if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
     try {
-        const schema = await getJson(schemaPath);
+        const schema = getJson(schemaPath);
         const validatorFunc = await schemaValidator.prepareSchema(schema);
         prettyLog(schemaPath);
         return await Promise.all(

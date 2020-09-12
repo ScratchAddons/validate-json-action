@@ -1,6 +1,8 @@
 import * as core from '@actions/core';
+import path from 'path';
 import { getConfig, verifyConfigValues } from './configuration';
 import { validateJsons } from './json-validator';
+import { getFile } from './file-reader';
 
 async function run() {
     try {
@@ -12,7 +14,15 @@ async function run() {
             return;
         }
 
-        const jsonRelativePaths = configuration.JSONS.split(',');
+        let jsonRelativePaths;
+
+        if (configuration.JSONS.endsWith('.txt')) {
+            jsonRelativePaths = (await getFile(path.join(configuration.GITHUB_WORKSPACE, configuration.JSONS))).split(
+                '\n'
+            );
+        } else {
+            jsonRelativePaths = configuration.JSONS.split(',');
+        }
 
         const validationResults = await validateJsons(
             configuration.GITHUB_WORKSPACE,
