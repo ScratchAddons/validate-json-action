@@ -8,7 +8,8 @@
     "start": "node lib/main.js",
     "build": "tsc -p tsconfig.build.json",
     "test": "npm run build && jest",
-    "format": "prettier --write '**/*.{ts,js,json}'"
+    "format": "prettier --write '**/*.{ts,js,json}'",
+    "pack": "ncc build"
   },
   "repository": {
     "type": "git",
@@ -24,7 +25,9 @@
   "dependencies": {
     "@actions/core": "^1.0.0",
     "@types/jest": "^24.0.22",
+    "@vercel/ncc": "^0.24.0",
     "ajv": "^6.10.2",
+    "axios": "^0.20.0",
     "better-ajv-errors": "^0.6.7",
     "chalk": "^2.4.2",
     "path": "^0.12.7"
