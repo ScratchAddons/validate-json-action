@@ -1,4 +1,4 @@
-import { getJson } from '../src/json-file-reader';
+import { getJson } from '../src/file-reader';
 import excepted from './mocks/tested-data/valid.json';
 import { InvalidJsonFileError } from '../src/errors';
 
