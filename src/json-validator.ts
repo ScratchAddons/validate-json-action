@@ -15,7 +15,7 @@ export const validateJsons = async (
 ): Promise<ValidationResult[]> => {
     if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
     try {
-        const schema = getJson(schemaPath);
+        const schema = await getJson(schemaPath);
         const validatorFunc = await schemaValidator.prepareSchema(schema);
         prettyLog(schemaPath);
         return await Promise.all(
