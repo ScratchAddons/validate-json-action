@@ -29,9 +29,7 @@ async function run() {
 
         jsonRelativePaths = jsonRelativePaths.reduce((accum: string[], current) => {
             const globFormula = current.replace(/\\/, '/');
-            const expandedGlob = glob.sync(globFormula, {
-                root: configuration.GITHUB_WORKSPACE,
-            });
+            const expandedGlob = glob.sync(globFormula, {});
             return [...accum, ...expandedGlob];
         }, []);
 
