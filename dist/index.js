@@ -151,12 +151,16 @@ exports.getJson = async (filePath) => {
 /***/ }),
 
 /***/ 638:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateJsons = void 0;
+const path_1 = __importDefault(__webpack_require__(5622));
 const file_reader_1 = __webpack_require__(362);
 const schema_validator_1 = __webpack_require__(1478);
 const logger_1 = __webpack_require__(5228);
@@ -164,19 +168,19 @@ exports.validateJsons = async (
 // sourceDir: string,
 schemaPath, 
 // jsonRelativePaths: string[]
-jsonAbsolutePaths) => {
+jsonPaths, sourceDir) => {
     // if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
     if (!/https?:\/\//.test(schemaPath))
-        schemaPath = schemaPath;
+        schemaPath = sourceDir ? path_1.default.join(sourceDir, schemaPath) : schemaPath;
     try {
         const schema = await file_reader_1.getJson(schemaPath);
         const validatorFunc = await schema_validator_1.schemaValidator.prepareSchema(schema);
         logger_1.prettyLog(schemaPath);
         return await Promise.all(
         // jsonRelativePaths.map(async relativePath => {
-        jsonAbsolutePaths.map(async (absolutePath) => {
+        jsonPaths.map(async (jsonPath) => {
             // const filePath = path.join(sourceDir, relativePath);
-            const filePath = absolutePath;
+            const filePath = sourceDir ? path_1.default.join(sourceDir, jsonPath) : jsonPath;
             try {
                 const jsonData = await file_reader_1.getJson(filePath);
                 const result = await schema_validator_1.schemaValidator.validate(jsonData, validatorFunc);
@@ -213,8 +217,9 @@ const errors_1 = __webpack_require__(9292);
 exports.prettyLog = (filePath, error) => {
     const prettyFilePath = chalk_1.default `{grey {bold {underline ${filePath}}}}`;
     const prettyMessagePrefix = error ? chalk_1.default `{red {bold ✗}} ` : chalk_1.default `{green {bold ✓}} `;
-    console.log(error);
-    let output = `${prettyMessagePrefix}${prettyFilePath}\n`;
+    let output = `${prettyMessagePrefix}${prettyFilePath}`;
+    if (error)
+        output += '\n';
     switch (true) {
         case error instanceof errors_1.InvalidSchemaError:
             const schemaErr = error;
@@ -295,9 +300,7 @@ async function run() {
         else {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
-        core.info(jsonRelativePaths.join('\n'));
         let jsonAbsolutePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
-        core.info(jsonAbsolutePaths.join('\n'));
         const validationResults = await json_validator_1.validateJsons(
         // configuration.GITHUB_WORKSPACE,
         configuration.SCHEMA, jsonAbsolutePaths);

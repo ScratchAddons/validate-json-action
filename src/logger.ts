@@ -4,8 +4,8 @@ import { InvalidSchemaError, InvalidJsonError, InvalidJsonFileError } from './er
 export const prettyLog = (filePath: string, error?: Error): void => {
     const prettyFilePath = chalk`{grey {bold {underline ${filePath}}}}`;
     const prettyMessagePrefix = error ? chalk`{red {bold ✗}} ` : chalk`{green {bold ✓}} `;
-    console.log(error);
-    let output = `${prettyMessagePrefix}${prettyFilePath}\n`;
+    let output = `${prettyMessagePrefix}${prettyFilePath}`;
+    if (error) output += '\n';
     switch (true) {
         case error instanceof InvalidSchemaError:
             const schemaErr = error as InvalidSchemaError;

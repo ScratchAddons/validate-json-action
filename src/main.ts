@@ -26,11 +26,7 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
-        core.info(jsonRelativePaths.join('\n'));
-
         let jsonAbsolutePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
-
-        core.info(jsonAbsolutePaths.join('\n'));
 
         const validationResults = await validateJsons(
             // configuration.GITHUB_WORKSPACE,
