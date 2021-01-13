@@ -25,8 +25,6 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
-        console.log('TTTTTTTTTTTTT');
-        console.log(jsonRelativePaths.join('\n'));
         jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
 
         const validationResults = await validateJsons(
