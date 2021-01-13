@@ -3,7 +3,7 @@ import path from 'path';
 import { getConfig, verifyConfigValues } from './configuration';
 import { validateJsons } from './json-validator';
 import { getFile } from './file-reader';
-import * as glob from 'glob';
+import * as glob from '@actions/glob';
 
 async function run() {
     try {
@@ -25,19 +25,9 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
-        core.info(jsonRelativePaths);
-
         // Code below is from @nhalstead. Thanks!
 
-        jsonRelativePaths = jsonRelativePaths.reduce((accum: string[], current) => {
-            const globFormula = current.replace(/\\/, '/');
-            const expandedGlob = glob.sync(globFormula, {
-                root: '/',
-            });
-            return [...accum, ...expandedGlob];
-        }, []);
-
-        core.info(jsonRelativePaths);
+        jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
 
         const validationResults = await validateJsons(
             configuration.GITHUB_WORKSPACE,
