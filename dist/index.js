@@ -243,7 +243,9 @@ exports.prettyLog = (filePath, error) => {
         default:
             break;
     }
-    console.log(`${output}\n`);
+    console.log(`${output}`);
+    if (error)
+        console.log();
 };
 
 
