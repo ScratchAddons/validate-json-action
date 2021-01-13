@@ -9,18 +9,22 @@ export interface ValidationResult {
 }
 
 export const validateJsons = async (
-    sourceDir: string,
+    // sourceDir: string,
     schemaPath: string,
-    jsonRelativePaths: string[]
+    // jsonRelativePaths: string[]
+    jsonAbsolutePaths: string[]
 ): Promise<ValidationResult[]> => {
-    if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
+    // if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
+    if (!/https?:\/\//.test(schemaPath)) schemaPath = schemaPath;
     try {
         const schema = await getJson(schemaPath);
         const validatorFunc = await schemaValidator.prepareSchema(schema);
         prettyLog(schemaPath);
         return await Promise.all(
-            jsonRelativePaths.map(async relativePath => {
-                const filePath = path.join(sourceDir, relativePath);
+            // jsonRelativePaths.map(async relativePath => {
+            jsonAbsolutePaths.map(async absolutePath => {
+                // const filePath = path.join(sourceDir, relativePath);
+                const filePath = absolutePath;
                 try {
                     const jsonData = await getJson(filePath);
                     const result = await schemaValidator.validate(jsonData, validatorFunc);

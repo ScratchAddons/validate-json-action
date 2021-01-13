@@ -28,14 +28,14 @@ async function run() {
 
         core.info(jsonRelativePaths.join('\n'));
 
-        jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
+        let jsonAbsolutePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
 
-        core.info(jsonRelativePaths.join('\n'));
+        core.info(jsonAbsolutePaths.join('\n'));
 
         const validationResults = await validateJsons(
-            configuration.GITHUB_WORKSPACE,
+            // configuration.GITHUB_WORKSPACE,
             configuration.SCHEMA,
-            jsonRelativePaths
+            jsonAbsolutePaths
         );
 
         const invalidJsons = validationResults.filter(res => !res.valid).map(res => res.filePath);

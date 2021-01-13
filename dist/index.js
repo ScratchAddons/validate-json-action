@@ -151,28 +151,32 @@ exports.getJson = async (filePath) => {
 /***/ }),
 
 /***/ 638:
-/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.validateJsons = void 0;
-const path_1 = __importDefault(__webpack_require__(5622));
 const file_reader_1 = __webpack_require__(362);
 const schema_validator_1 = __webpack_require__(1478);
 const logger_1 = __webpack_require__(5228);
-exports.validateJsons = async (sourceDir, schemaPath, jsonRelativePaths) => {
+exports.validateJsons = async (
+// sourceDir: string,
+schemaPath, 
+// jsonRelativePaths: string[]
+jsonAbsolutePaths) => {
+    // if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
     if (!/https?:\/\//.test(schemaPath))
-        schemaPath = path_1.default.join(sourceDir, schemaPath);
+        schemaPath = schemaPath;
     try {
         const schema = await file_reader_1.getJson(schemaPath);
         const validatorFunc = await schema_validator_1.schemaValidator.prepareSchema(schema);
         logger_1.prettyLog(schemaPath);
-        return await Promise.all(jsonRelativePaths.map(async (relativePath) => {
-            const filePath = path_1.default.join(sourceDir, relativePath);
+        return await Promise.all(
+        // jsonRelativePaths.map(async relativePath => {
+        jsonAbsolutePaths.map(async (absolutePath) => {
+            // const filePath = path.join(sourceDir, relativePath);
+            const filePath = absolutePath;
             try {
                 const jsonData = await file_reader_1.getJson(filePath);
                 const result = await schema_validator_1.schemaValidator.validate(jsonData, validatorFunc);
@@ -292,9 +296,11 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
         core.info(jsonRelativePaths.join('\n'));
-        jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
-        core.info(jsonRelativePaths.join('\n'));
-        const validationResults = await json_validator_1.validateJsons(configuration.GITHUB_WORKSPACE, configuration.SCHEMA, jsonRelativePaths);
+        let jsonAbsolutePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
+        core.info(jsonAbsolutePaths.join('\n'));
+        const validationResults = await json_validator_1.validateJsons(
+        // configuration.GITHUB_WORKSPACE,
+        configuration.SCHEMA, jsonAbsolutePaths);
         const invalidJsons = validationResults.filter(res => !res.valid).map(res => res.filePath);
         core.setOutput('INVALID', invalidJsons.length > 0 ? invalidJsons.join(',') : '');
         if (invalidJsons.length > 0) {
