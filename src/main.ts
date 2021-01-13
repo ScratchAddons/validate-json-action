@@ -33,6 +33,8 @@ async function run() {
             return [...accum, ...expandedGlob];
         }, []);
 
+        console.log(jsonRelativePaths);
+
         const validationResults = await validateJsons(
             configuration.GITHUB_WORKSPACE,
             configuration.SCHEMA,
