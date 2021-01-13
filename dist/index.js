@@ -219,7 +219,7 @@ exports.prettyLog = (filePath, error) => {
     const prettyMessagePrefix = error ? chalk_1.default `{red {bold ✗}} ` : chalk_1.default `{green {bold ✓}} `;
     let output = `${prettyMessagePrefix}${prettyFilePath}`;
     if (error)
-        output += '\n';
+        output += '\n\n';
     switch (true) {
         case error instanceof errors_1.InvalidSchemaError:
             const schemaErr = error;
