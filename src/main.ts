@@ -6,7 +6,6 @@ import { getFile } from './file-reader';
 import * as glob from '@actions/glob';
 
 async function run() {
-    console.log('hello!');
     try {
         const configuration = getConfig();
         const configurationErrors = verifyConfigValues(configuration);

@@ -243,9 +243,9 @@ exports.prettyLog = (filePath, error) => {
         default:
             break;
     }
-    console.log(`${output}`);
     if (error)
-        console.log();
+        output += '\n';
+    console.log(`${output}`);
 };
 
 
@@ -286,7 +286,6 @@ const json_validator_1 = __webpack_require__(638);
 const file_reader_1 = __webpack_require__(362);
 const glob = __importStar(__webpack_require__(8090));
 async function run() {
-    console.log('hello!');
     try {
         const configuration = configuration_1.getConfig();
         const configurationErrors = configuration_1.verifyConfigValues(configuration);

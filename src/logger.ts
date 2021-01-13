@@ -30,6 +30,6 @@ export const prettyLog = (filePath: string, error?: Error): void => {
         default:
             break;
     }
+    if (error) output += '\n';
     console.log(`${output}`);
-    if (error) console.log();
 };
