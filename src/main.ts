@@ -25,6 +25,8 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
+        core.info(jsonRelativePaths);
+
         // Code below is from @nhalstead. Thanks!
 
         jsonRelativePaths = jsonRelativePaths.reduce((accum: string[], current) => {
@@ -33,7 +35,7 @@ async function run() {
             return [...accum, ...expandedGlob];
         }, []);
 
-        console.log(jsonRelativePaths);
+        core.info(jsonRelativePaths);
 
         const validationResults = await validateJsons(
             configuration.GITHUB_WORKSPACE,
