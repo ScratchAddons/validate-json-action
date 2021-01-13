@@ -3,6 +3,7 @@ import path from 'path';
 import { getConfig, verifyConfigValues } from './configuration';
 import { validateJsons } from './json-validator';
 import { getFile } from './file-reader';
+import * as glob from 'glob';
 
 async function run() {
     try {
@@ -18,11 +19,21 @@ async function run() {
 
         if (configuration.JSONS.endsWith('.txt')) {
             jsonRelativePaths = (await getFile(path.join(configuration.GITHUB_WORKSPACE, configuration.JSONS))).split(
-                '\n'
+                configuration.SEPARATOR
             );
         } else {
-            jsonRelativePaths = configuration.JSONS.split(',');
+            jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
+
+        // Code below is from @nhalstead. Thanks!
+
+        jsonRelativePaths = jsonRelativePaths.reduce((accum: string[], current) => {
+            const globFormula = current.replace(/\\/, '/');
+            const expandedGlob = glob.sync(globFormula, {
+                root: configuration.GITHUB_WORKSPACE,
+            });
+            return [...accum, ...expandedGlob];
+        }, []);
 
         const validationResults = await validateJsons(
             configuration.GITHUB_WORKSPACE,

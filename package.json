@@ -23,23 +23,24 @@
   "author": "OrRosenblatt",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.0.0",
-    "@types/jest": "^24.0.22",
-    "@vercel/ncc": "^0.24.0",
-    "ajv": "^6.10.2",
-    "axios": "^0.20.0",
+    "@actions/core": "^1.2.6",
+    "@types/jest": "^24.9.1",
+    "@vercel/ncc": "^0.24.1",
+    "ajv": "^6.12.6",
+    "axios": "^0.21.1",
     "better-ajv-errors": "^0.6.7",
     "chalk": "^2.4.2",
+    "glob": "^7.1.6",
     "path": "^0.12.7"
   },
   "devDependencies": {
-    "@types/node": "^12.12.58",
-    "husky": "^3.0.9",
-    "jest": "^24.9.0",
-    "jest-circus": "^24.7.1",
-    "lint-staged": "^9.4.2",
+    "@types/node": "^12.19.13",
+    "husky": "^3.1.0",
+    "jest": "^26.6.3",
+    "jest-circus": "^26.6.3",
+    "lint-staged": "^9.5.0",
     "prettier": "1.18.2",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.7.2"
+    "ts-jest": "^26.4.4",
+    "typescript": "^3.9.7"
   }
 }
