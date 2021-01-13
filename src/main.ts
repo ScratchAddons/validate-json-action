@@ -31,7 +31,9 @@ async function run() {
 
         jsonRelativePaths = jsonRelativePaths.reduce((accum: string[], current) => {
             const globFormula = current.replace(/\\/, '/');
-            const expandedGlob = glob.sync(globFormula, {});
+            const expandedGlob = glob.sync(globFormula, {
+                root: '/',
+            });
             return [...accum, ...expandedGlob];
         }, []);
 
