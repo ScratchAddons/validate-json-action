@@ -6,6 +6,7 @@ import { getFile } from './file-reader';
 import * as glob from '@actions/glob';
 
 async function run() {
+    console.log('hello!');
     try {
         const configuration = getConfig();
         const configurationErrors = verifyConfigValues(configuration);
@@ -25,7 +26,11 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
+        core.info(jsonRelativePaths.join('\n'));
+
         jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
+
+        core.info(jsonRelativePaths.join('\n'));
 
         const validationResults = await validateJsons(
             configuration.GITHUB_WORKSPACE,
