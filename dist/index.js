@@ -209,6 +209,7 @@ const errors_1 = __webpack_require__(9292);
 exports.prettyLog = (filePath, error) => {
     const prettyFilePath = chalk_1.default `{grey {bold {underline ${filePath}}}}`;
     const prettyMessagePrefix = error ? chalk_1.default `{red {bold ✗}} ` : chalk_1.default `{green {bold ✓}} `;
+    console.log(error);
     let output = `${prettyMessagePrefix}${prettyFilePath}\n`;
     switch (true) {
         case error instanceof errors_1.InvalidSchemaError:
@@ -274,7 +275,7 @@ const json_validator_1 = __webpack_require__(638);
 const file_reader_1 = __webpack_require__(362);
 const glob = __importStar(__webpack_require__(8090));
 async function run() {
-    console.log("hello!");
+    console.log('hello!');
     try {
         const configuration = configuration_1.getConfig();
         const configurationErrors = configuration_1.verifyConfigValues(configuration);
@@ -290,9 +291,9 @@ async function run() {
         else {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
-        core.info(jsonRelativePaths.join("\n"));
+        core.info(jsonRelativePaths.join('\n'));
         jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
-        core.info(jsonRelativePaths.join("\n"));
+        core.info(jsonRelativePaths.join('\n'));
         const validationResults = await json_validator_1.validateJsons(configuration.GITHUB_WORKSPACE, configuration.SCHEMA, jsonRelativePaths);
         const invalidJsons = validationResults.filter(res => !res.valid).map(res => res.filePath);
         core.setOutput('INVALID', invalidJsons.length > 0 ? invalidJsons.join(',') : '');
