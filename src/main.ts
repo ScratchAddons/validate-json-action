@@ -15,7 +15,7 @@ async function run() {
             return;
         }
 
-        let jsonRelativePaths;
+        let jsonRelativePaths: string[];
 
         if (configuration.JSONS.endsWith('.txt')) {
             jsonRelativePaths = (await getFile(path.join(configuration.GITHUB_WORKSPACE, configuration.JSONS))).split(
@@ -25,8 +25,7 @@ async function run() {
             jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
-        // Code below is from @nhalstead. Thanks!
-
+        core.info(jsonRelativePaths.join('\n'));
         jsonRelativePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
 
         const validationResults = await validateJsons(
