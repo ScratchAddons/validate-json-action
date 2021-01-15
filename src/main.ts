@@ -3,6 +3,7 @@ import path from 'path';
 import { getConfig, verifyConfigValues } from './configuration';
 import { validateJsons } from './json-validator';
 import { getFile } from './file-reader';
+import * as glob from '@actions/glob';
 
 async function run() {
     try {
@@ -14,20 +15,22 @@ async function run() {
             return;
         }
 
-        let jsonRelativePaths;
+        let jsonRelativePaths: string[];
 
         if (configuration.JSONS.endsWith('.txt')) {
             jsonRelativePaths = (await getFile(path.join(configuration.GITHUB_WORKSPACE, configuration.JSONS))).split(
-                '\n'
+                configuration.SEPARATOR
             );
         } else {
-            jsonRelativePaths = configuration.JSONS.split(',');
+            jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
 
+        let jsonAbsolutePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
+
         const validationResults = await validateJsons(
-            configuration.GITHUB_WORKSPACE,
+            // configuration.GITHUB_WORKSPACE,
             configuration.SCHEMA,
-            jsonRelativePaths
+            jsonAbsolutePaths
         );
 
         const invalidJsons = validationResults.filter(res => !res.valid).map(res => res.filePath);

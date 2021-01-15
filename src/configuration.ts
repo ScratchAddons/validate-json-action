@@ -4,6 +4,7 @@ export enum ConfigKey {
     GITHUB_WORKSPACE = 'GITHUB_WORKSPACE',
     SCHEMA = 'SCHEMA',
     JSONS = 'JSONS',
+    SEPARATOR = 'SEPARATOR',
 }
 
 export type ConfigKeys = keyof typeof ConfigKey;
@@ -24,6 +25,7 @@ export const configMapping: KeyMapping[] = [
     },
     { key: ConfigKey.SCHEMA, setup: 'INPUT' },
     { key: ConfigKey.JSONS, setup: 'INPUT' },
+    { key: ConfigKey.SEPARATOR, setup: 'INPUT' },
 ];
 
 export function getConfig(): Config {

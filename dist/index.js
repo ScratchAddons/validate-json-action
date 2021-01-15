@@ -7,20 +7,34 @@ module.exports =
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.verifyConfigValues = exports.getConfig = exports.configMapping = exports.ConfigKey = void 0;
 const core = __importStar(__webpack_require__(2186));
 var ConfigKey;
 (function (ConfigKey) {
     ConfigKey["GITHUB_WORKSPACE"] = "GITHUB_WORKSPACE";
     ConfigKey["SCHEMA"] = "SCHEMA";
     ConfigKey["JSONS"] = "JSONS";
+    ConfigKey["SEPARATOR"] = "SEPARATOR";
 })(ConfigKey = exports.ConfigKey || (exports.ConfigKey = {}));
 exports.configMapping = [
     {
@@ -29,6 +43,7 @@ exports.configMapping = [
     },
     { key: ConfigKey.SCHEMA, setup: 'INPUT' },
     { key: ConfigKey.JSONS, setup: 'INPUT' },
+    { key: ConfigKey.SEPARATOR, setup: 'INPUT' },
 ];
 function getConfig() {
     let config = {};
@@ -72,6 +87,7 @@ exports.verifyConfigValues = verifyConfigValues;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.InvalidJsonError = exports.InvalidSchemaError = exports.InvalidJsonFileError = void 0;
 class InvalidJsonFileError extends Error {
     constructor(filePath, innerError) {
         super();
@@ -108,6 +124,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getJson = exports.getFile = void 0;
 const fs_1 = __importDefault(__webpack_require__(5747));
 const axios_1 = __importDefault(__webpack_require__(6545));
 const errors_1 = __webpack_require__(9292);
@@ -142,19 +159,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateJsons = void 0;
 const path_1 = __importDefault(__webpack_require__(5622));
 const file_reader_1 = __webpack_require__(362);
 const schema_validator_1 = __webpack_require__(1478);
 const logger_1 = __webpack_require__(5228);
-exports.validateJsons = async (sourceDir, schemaPath, jsonRelativePaths) => {
+exports.validateJsons = async (
+// sourceDir: string,
+schemaPath, 
+// jsonRelativePaths: string[]
+jsonPaths, sourceDir) => {
+    // if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
     if (!/https?:\/\//.test(schemaPath))
-        schemaPath = path_1.default.join(sourceDir, schemaPath);
+        schemaPath = sourceDir ? path_1.default.join(sourceDir, schemaPath) : schemaPath;
     try {
         const schema = await file_reader_1.getJson(schemaPath);
         const validatorFunc = await schema_validator_1.schemaValidator.prepareSchema(schema);
         logger_1.prettyLog(schemaPath);
-        return await Promise.all(jsonRelativePaths.map(async (relativePath) => {
-            const filePath = path_1.default.join(sourceDir, relativePath);
+        return await Promise.all(
+        // jsonRelativePaths.map(async relativePath => {
+        jsonPaths.map(async (jsonPath) => {
+            // const filePath = path.join(sourceDir, relativePath);
+            const filePath = sourceDir ? path_1.default.join(sourceDir, jsonPath) : jsonPath;
             try {
                 const jsonData = await file_reader_1.getJson(filePath);
                 const result = await schema_validator_1.schemaValidator.validate(jsonData, validatorFunc);
@@ -185,12 +211,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.prettyLog = void 0;
 const chalk_1 = __importDefault(__webpack_require__(1779));
 const errors_1 = __webpack_require__(9292);
 exports.prettyLog = (filePath, error) => {
     const prettyFilePath = chalk_1.default `{grey {bold {underline ${filePath}}}}`;
     const prettyMessagePrefix = error ? chalk_1.default `{red {bold ✗}} ` : chalk_1.default `{green {bold ✓}} `;
-    let output = `${prettyMessagePrefix}${prettyFilePath}\n`;
+    let output = `${prettyMessagePrefix}${prettyFilePath}`;
+    if (error)
+        output += '\n\n';
     switch (true) {
         case error instanceof errors_1.InvalidSchemaError:
             const schemaErr = error;
@@ -214,7 +243,9 @@ exports.prettyLog = (filePath, error) => {
         default:
             break;
     }
-    console.log(`${output}\n`);
+    if (error)
+        output += '\n';
+    console.log(`${output}`);
 };
 
 
@@ -225,11 +256,23 @@ exports.prettyLog = (filePath, error) => {
 
 "use strict";
 
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -241,6 +284,7 @@ const path_1 = __importDefault(__webpack_require__(5622));
 const configuration_1 = __webpack_require__(5527);
 const json_validator_1 = __webpack_require__(638);
 const file_reader_1 = __webpack_require__(362);
+const glob = __importStar(__webpack_require__(8090));
 async function run() {
     try {
         const configuration = configuration_1.getConfig();
@@ -252,12 +296,15 @@ async function run() {
         }
         let jsonRelativePaths;
         if (configuration.JSONS.endsWith('.txt')) {
-            jsonRelativePaths = (await file_reader_1.getFile(path_1.default.join(configuration.GITHUB_WORKSPACE, configuration.JSONS))).split('\n');
+            jsonRelativePaths = (await file_reader_1.getFile(path_1.default.join(configuration.GITHUB_WORKSPACE, configuration.JSONS))).split(configuration.SEPARATOR);
         }
         else {
-            jsonRelativePaths = configuration.JSONS.split(',');
+            jsonRelativePaths = configuration.JSONS.split(configuration.SEPARATOR);
         }
-        const validationResults = await json_validator_1.validateJsons(configuration.GITHUB_WORKSPACE, configuration.SCHEMA, jsonRelativePaths);
+        let jsonAbsolutePaths = await (await glob.create(jsonRelativePaths.join('\n'))).glob();
+        const validationResults = await json_validator_1.validateJsons(
+        // configuration.GITHUB_WORKSPACE,
+        configuration.SCHEMA, jsonAbsolutePaths);
         const invalidJsons = validationResults.filter(res => !res.valid).map(res => res.filePath);
         core.setOutput('INVALID', invalidJsons.length > 0 ? invalidJsons.join(',') : '');
         if (invalidJsons.length > 0) {
@@ -285,6 +332,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.schemaValidator = void 0;
 const ajv_1 = __importDefault(__webpack_require__(4941));
 const better_ajv_errors_1 = __importDefault(__webpack_require__(1179));
 const errors_1 = __webpack_require__(9292);
@@ -322,21 +370,29 @@ exports.schemaValidator = new SchemaValidator();
 /***/ }),
 
 /***/ 7351:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
 
 "use strict";
 
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const os = __webpack_require__(2087);
+const os = __importStar(__webpack_require__(2087));
+const utils_1 = __webpack_require__(5278);
 /**
  * Commands
  *
  * Command Format:
- *   ##[name key=value;key=value]message
+ *   ::name key=value,key=value::message
  *
  * Examples:
- *   ##[warning]This is the user warning message
- *   ##[set-secret name=mypassword]definitelyNotAPassword!
+ *   ::warning::This is the message
+ *   ::set-env name=MY_VAR::some value
  */
 function issueCommand(command, properties, message) {
     const cmd = new Command(command, properties, message);
@@ -361,34 +417,39 @@ class Command {
         let cmdStr = CMD_STRING + this.command;
         if (this.properties && Object.keys(this.properties).length > 0) {
             cmdStr += ' ';
+            let first = true;
             for (const key in this.properties) {
                 if (this.properties.hasOwnProperty(key)) {
                     const val = this.properties[key];
                     if (val) {
-                        // safely append the val - avoid blowing up when attempting to
-                        // call .replace() if message is not a string for some reason
-                        cmdStr += `${key}=${escape(`${val || ''}`)},`;
+                        if (first) {
+                            first = false;
+                        }
+                        else {
+                            cmdStr += ',';
+                        }
+                        cmdStr += `${key}=${escapeProperty(val)}`;
                     }
                 }
             }
         }
-        cmdStr += CMD_STRING;
-        // safely append the message - avoid blowing up when attempting to
-        // call .replace() if message is not a string for some reason
-        const message = `${this.message || ''}`;
-        cmdStr += escapeData(message);
+        cmdStr += `${CMD_STRING}${escapeData(this.message)}`;
         return cmdStr;
     }
 }
 function escapeData(s) {
-    return s.replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+    return utils_1.toCommandValue(s)
+        .replace(/%/g, '%25')
+        .replace(/\r/g, '%0D')
+        .replace(/\n/g, '%0A');
 }
-function escape(s) {
-    return s
+function escapeProperty(s) {
+    return utils_1.toCommandValue(s)
+        .replace(/%/g, '%25')
         .replace(/\r/g, '%0D')
         .replace(/\n/g, '%0A')
-        .replace(/]/g, '%5D')
-        .replace(/;/g, '%3B');
+        .replace(/:/g, '%3A')
+        .replace(/,/g, '%2C');
 }
 //# sourceMappingURL=command.js.map
 
@@ -408,10 +469,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const command_1 = __webpack_require__(7351);
-const os = __webpack_require__(2087);
-const path = __webpack_require__(5622);
+const file_command_1 = __webpack_require__(717);
+const utils_1 = __webpack_require__(5278);
+const os = __importStar(__webpack_require__(2087));
+const path = __importStar(__webpack_require__(5622));
 /**
  * The code to exit an action
  */
@@ -432,11 +502,21 @@ var ExitCode;
 /**
  * Sets env variable for this action and future actions in the job
  * @param name the name of the variable to set
- * @param val the value of the variable
+ * @param val the value of the variable. Non-string values will be converted to a string via JSON.stringify
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function exportVariable(name, val) {
-    process.env[name] = val;
-    command_1.issueCommand('set-env', { name }, val);
+    const convertedVal = utils_1.toCommandValue(val);
+    process.env[name] = convertedVal;
+    const filePath = process.env['GITHUB_ENV'] || '';
+    if (filePath) {
+        const delimiter = '_GitHubActionsFileCommandDelimeter_';
+        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
+        file_command_1.issueCommand('ENV', commandValue);
+    }
+    else {
+        command_1.issueCommand('set-env', { name }, convertedVal);
+    }
 }
 exports.exportVariable = exportVariable;
 /**
@@ -452,7 +532,13 @@ exports.setSecret = setSecret;
  * @param inputPath
  */
 function addPath(inputPath) {
-    command_1.issueCommand('add-path', {}, inputPath);
+    const filePath = process.env['GITHUB_PATH'] || '';
+    if (filePath) {
+        file_command_1.issueCommand('PATH', inputPath);
+    }
+    else {
+        command_1.issueCommand('add-path', {}, inputPath);
+    }
     process.env['PATH'] = `${inputPath}${path.delimiter}${process.env['PATH']}`;
 }
 exports.addPath = addPath;
@@ -475,12 +561,22 @@ exports.getInput = getInput;
  * Sets the value of an output.
  *
  * @param     name     name of the output to set
- * @param     value    value to store
+ * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
     command_1.issueCommand('set-output', { name }, value);
 }
 exports.setOutput = setOutput;
+/**
+ * Enables or disables the echoing of commands into stdout for the rest of the step.
+ * Echoing is disabled by default if ACTIONS_STEP_DEBUG is not set.
+ *
+ */
+function setCommandEcho(enabled) {
+    command_1.issue('echo', enabled ? 'on' : 'off');
+}
+exports.setCommandEcho = setCommandEcho;
 //-----------------------------------------------------------------------
 // Results
 //-----------------------------------------------------------------------
@@ -498,6 +594,13 @@ exports.setFailed = setFailed;
 // Logging Commands
 //-----------------------------------------------------------------------
 /**
+ * Gets whether Actions Step Debug is on or not
+ */
+function isDebug() {
+    return process.env['RUNNER_DEBUG'] === '1';
+}
+exports.isDebug = isDebug;
+/**
  * Writes debug message to user log
  * @param message debug message
  */
@@ -507,18 +610,18 @@ function debug(message) {
 exports.debug = debug;
 /**
  * Adds an error issue
- * @param message error issue message
+ * @param message error issue message. Errors will be converted to string via toString()
  */
 function error(message) {
-    command_1.issue('error', message);
+    command_1.issue('error', message instanceof Error ? message.toString() : message);
 }
 exports.error = error;
 /**
  * Adds an warning issue
- * @param message warning issue message
+ * @param message warning issue message. Errors will be converted to string via toString()
  */
 function warning(message) {
-    command_1.issue('warning', message);
+    command_1.issue('warning', message instanceof Error ? message.toString() : message);
 }
 exports.warning = warning;
 /**
@@ -576,8 +679,9 @@ exports.group = group;
  * Saves state for current action, the state can only be retrieved by this action's post job execution.
  *
  * @param     name     name of the state to store
- * @param     value    value to store
+ * @param     value    value to store. Non-string values will be converted to a string via JSON.stringify
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function saveState(name, value) {
     command_1.issueCommand('save-state', { name }, value);
 }
@@ -593,6 +697,1049 @@ function getState(name) {
 }
 exports.getState = getState;
 //# sourceMappingURL=core.js.map
+
+/***/ }),
+
+/***/ 717:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+// For internal use, subject to change.
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const fs = __importStar(__webpack_require__(5747));
+const os = __importStar(__webpack_require__(2087));
+const utils_1 = __webpack_require__(5278);
+function issueCommand(command, message) {
+    const filePath = process.env[`GITHUB_${command}`];
+    if (!filePath) {
+        throw new Error(`Unable to find environment variable for file command ${command}`);
+    }
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`Missing file at path: ${filePath}`);
+    }
+    fs.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os.EOL}`, {
+        encoding: 'utf8'
+    });
+}
+exports.issueCommand = issueCommand;
+//# sourceMappingURL=file-command.js.map
+
+/***/ }),
+
+/***/ 5278:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+// We use any as a valid input type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/**
+ * Sanitizes an input into a string so it can be passed into issueCommand safely
+ * @param input input to sanitize into a string
+ */
+function toCommandValue(input) {
+    if (input === null || input === undefined) {
+        return '';
+    }
+    else if (typeof input === 'string' || input instanceof String) {
+        return input;
+    }
+    return JSON.stringify(input);
+}
+exports.toCommandValue = toCommandValue;
+//# sourceMappingURL=utils.js.map
+
+/***/ }),
+
+/***/ 8090:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const internal_globber_1 = __webpack_require__(8298);
+/**
+ * Constructs a globber
+ *
+ * @param patterns  Patterns separated by newlines
+ * @param options   Glob options
+ */
+function create(patterns, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return yield internal_globber_1.DefaultGlobber.create(patterns, options);
+    });
+}
+exports.create = create;
+//# sourceMappingURL=glob.js.map
+
+/***/ }),
+
+/***/ 1026:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__webpack_require__(2186));
+/**
+ * Returns a copy with defaults filled in.
+ */
+function getOptions(copy) {
+    const result = {
+        followSymbolicLinks: true,
+        implicitDescendants: true,
+        omitBrokenSymbolicLinks: true
+    };
+    if (copy) {
+        if (typeof copy.followSymbolicLinks === 'boolean') {
+            result.followSymbolicLinks = copy.followSymbolicLinks;
+            core.debug(`followSymbolicLinks '${result.followSymbolicLinks}'`);
+        }
+        if (typeof copy.implicitDescendants === 'boolean') {
+            result.implicitDescendants = copy.implicitDescendants;
+            core.debug(`implicitDescendants '${result.implicitDescendants}'`);
+        }
+        if (typeof copy.omitBrokenSymbolicLinks === 'boolean') {
+            result.omitBrokenSymbolicLinks = copy.omitBrokenSymbolicLinks;
+            core.debug(`omitBrokenSymbolicLinks '${result.omitBrokenSymbolicLinks}'`);
+        }
+    }
+    return result;
+}
+exports.getOptions = getOptions;
+//# sourceMappingURL=internal-glob-options-helper.js.map
+
+/***/ }),
+
+/***/ 8298:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
+var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+    return i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i;
+    function verb(n) { if (g[n]) i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; }
+    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+    function fulfill(value) { resume("next", value); }
+    function reject(value) { resume("throw", value); }
+    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__webpack_require__(2186));
+const fs = __importStar(__webpack_require__(5747));
+const globOptionsHelper = __importStar(__webpack_require__(1026));
+const path = __importStar(__webpack_require__(5622));
+const patternHelper = __importStar(__webpack_require__(9005));
+const internal_match_kind_1 = __webpack_require__(1063);
+const internal_pattern_1 = __webpack_require__(4536);
+const internal_search_state_1 = __webpack_require__(9117);
+const IS_WINDOWS = process.platform === 'win32';
+class DefaultGlobber {
+    constructor(options) {
+        this.patterns = [];
+        this.searchPaths = [];
+        this.options = globOptionsHelper.getOptions(options);
+    }
+    getSearchPaths() {
+        // Return a copy
+        return this.searchPaths.slice();
+    }
+    glob() {
+        var e_1, _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = [];
+            try {
+                for (var _b = __asyncValues(this.globGenerator()), _c; _c = yield _b.next(), !_c.done;) {
+                    const itemPath = _c.value;
+                    result.push(itemPath);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            return result;
+        });
+    }
+    globGenerator() {
+        return __asyncGenerator(this, arguments, function* globGenerator_1() {
+            // Fill in defaults options
+            const options = globOptionsHelper.getOptions(this.options);
+            // Implicit descendants?
+            const patterns = [];
+            for (const pattern of this.patterns) {
+                patterns.push(pattern);
+                if (options.implicitDescendants &&
+                    (pattern.trailingSeparator ||
+                        pattern.segments[pattern.segments.length - 1] !== '**')) {
+                    patterns.push(new internal_pattern_1.Pattern(pattern.negate, pattern.segments.concat('**')));
+                }
+            }
+            // Push the search paths
+            const stack = [];
+            for (const searchPath of patternHelper.getSearchPaths(patterns)) {
+                core.debug(`Search path '${searchPath}'`);
+                // Exists?
+                try {
+                    // Intentionally using lstat. Detection for broken symlink
+                    // will be performed later (if following symlinks).
+                    yield __await(fs.promises.lstat(searchPath));
+                }
+                catch (err) {
+                    if (err.code === 'ENOENT') {
+                        continue;
+                    }
+                    throw err;
+                }
+                stack.unshift(new internal_search_state_1.SearchState(searchPath, 1));
+            }
+            // Search
+            const traversalChain = []; // used to detect cycles
+            while (stack.length) {
+                // Pop
+                const item = stack.pop();
+                // Match?
+                const match = patternHelper.match(patterns, item.path);
+                const partialMatch = !!match || patternHelper.partialMatch(patterns, item.path);
+                if (!match && !partialMatch) {
+                    continue;
+                }
+                // Stat
+                const stats = yield __await(DefaultGlobber.stat(item, options, traversalChain)
+                // Broken symlink, or symlink cycle detected, or no longer exists
+                );
+                // Broken symlink, or symlink cycle detected, or no longer exists
+                if (!stats) {
+                    continue;
+                }
+                // Directory
+                if (stats.isDirectory()) {
+                    // Matched
+                    if (match & internal_match_kind_1.MatchKind.Directory) {
+                        yield yield __await(item.path);
+                    }
+                    // Descend?
+                    else if (!partialMatch) {
+                        continue;
+                    }
+                    // Push the child items in reverse
+                    const childLevel = item.level + 1;
+                    const childItems = (yield __await(fs.promises.readdir(item.path))).map(x => new internal_search_state_1.SearchState(path.join(item.path, x), childLevel));
+                    stack.push(...childItems.reverse());
+                }
+                // File
+                else if (match & internal_match_kind_1.MatchKind.File) {
+                    yield yield __await(item.path);
+                }
+            }
+        });
+    }
+    /**
+     * Constructs a DefaultGlobber
+     */
+    static create(patterns, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const result = new DefaultGlobber(options);
+            if (IS_WINDOWS) {
+                patterns = patterns.replace(/\r\n/g, '\n');
+                patterns = patterns.replace(/\r/g, '\n');
+            }
+            const lines = patterns.split('\n').map(x => x.trim());
+            for (const line of lines) {
+                // Empty or comment
+                if (!line || line.startsWith('#')) {
+                    continue;
+                }
+                // Pattern
+                else {
+                    result.patterns.push(new internal_pattern_1.Pattern(line));
+                }
+            }
+            result.searchPaths.push(...patternHelper.getSearchPaths(result.patterns));
+            return result;
+        });
+    }
+    static stat(item, options, traversalChain) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Note:
+            // `stat` returns info about the target of a symlink (or symlink chain)
+            // `lstat` returns info about a symlink itself
+            let stats;
+            if (options.followSymbolicLinks) {
+                try {
+                    // Use `stat` (following symlinks)
+                    stats = yield fs.promises.stat(item.path);
+                }
+                catch (err) {
+                    if (err.code === 'ENOENT') {
+                        if (options.omitBrokenSymbolicLinks) {
+                            core.debug(`Broken symlink '${item.path}'`);
+                            return undefined;
+                        }
+                        throw new Error(`No information found for the path '${item.path}'. This may indicate a broken symbolic link.`);
+                    }
+                    throw err;
+                }
+            }
+            else {
+                // Use `lstat` (not following symlinks)
+                stats = yield fs.promises.lstat(item.path);
+            }
+            // Note, isDirectory() returns false for the lstat of a symlink
+            if (stats.isDirectory() && options.followSymbolicLinks) {
+                // Get the realpath
+                const realPath = yield fs.promises.realpath(item.path);
+                // Fixup the traversal chain to match the item level
+                while (traversalChain.length >= item.level) {
+                    traversalChain.pop();
+                }
+                // Test for a cycle
+                if (traversalChain.some((x) => x === realPath)) {
+                    core.debug(`Symlink cycle detected for path '${item.path}' and realpath '${realPath}'`);
+                    return undefined;
+                }
+                // Update the traversal chain
+                traversalChain.push(realPath);
+            }
+            return stats;
+        });
+    }
+}
+exports.DefaultGlobber = DefaultGlobber;
+//# sourceMappingURL=internal-globber.js.map
+
+/***/ }),
+
+/***/ 1063:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+/**
+ * Indicates whether a pattern matches a path
+ */
+var MatchKind;
+(function (MatchKind) {
+    /** Not matched */
+    MatchKind[MatchKind["None"] = 0] = "None";
+    /** Matched if the path is a directory */
+    MatchKind[MatchKind["Directory"] = 1] = "Directory";
+    /** Matched if the path is a regular file */
+    MatchKind[MatchKind["File"] = 2] = "File";
+    /** Matched */
+    MatchKind[MatchKind["All"] = 3] = "All";
+})(MatchKind = exports.MatchKind || (exports.MatchKind = {}));
+//# sourceMappingURL=internal-match-kind.js.map
+
+/***/ }),
+
+/***/ 1849:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const path = __importStar(__webpack_require__(5622));
+const assert_1 = __importDefault(__webpack_require__(2357));
+const IS_WINDOWS = process.platform === 'win32';
+/**
+ * Similar to path.dirname except normalizes the path separators and slightly better handling for Windows UNC paths.
+ *
+ * For example, on Linux/macOS:
+ * - `/               => /`
+ * - `/hello          => /`
+ *
+ * For example, on Windows:
+ * - `C:\             => C:\`
+ * - `C:\hello        => C:\`
+ * - `C:              => C:`
+ * - `C:hello         => C:`
+ * - `\               => \`
+ * - `\hello          => \`
+ * - `\\hello         => \\hello`
+ * - `\\hello\world   => \\hello\world`
+ */
+function dirname(p) {
+    // Normalize slashes and trim unnecessary trailing slash
+    p = safeTrimTrailingSeparator(p);
+    // Windows UNC root, e.g. \\hello or \\hello\world
+    if (IS_WINDOWS && /^\\\\[^\\]+(\\[^\\]+)?$/.test(p)) {
+        return p;
+    }
+    // Get dirname
+    let result = path.dirname(p);
+    // Trim trailing slash for Windows UNC root, e.g. \\hello\world\
+    if (IS_WINDOWS && /^\\\\[^\\]+\\[^\\]+\\$/.test(result)) {
+        result = safeTrimTrailingSeparator(result);
+    }
+    return result;
+}
+exports.dirname = dirname;
+/**
+ * Roots the path if not already rooted. On Windows, relative roots like `\`
+ * or `C:` are expanded based on the current working directory.
+ */
+function ensureAbsoluteRoot(root, itemPath) {
+    assert_1.default(root, `ensureAbsoluteRoot parameter 'root' must not be empty`);
+    assert_1.default(itemPath, `ensureAbsoluteRoot parameter 'itemPath' must not be empty`);
+    // Already rooted
+    if (hasAbsoluteRoot(itemPath)) {
+        return itemPath;
+    }
+    // Windows
+    if (IS_WINDOWS) {
+        // Check for itemPath like C: or C:foo
+        if (itemPath.match(/^[A-Z]:[^\\/]|^[A-Z]:$/i)) {
+            let cwd = process.cwd();
+            assert_1.default(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
+            // Drive letter matches cwd? Expand to cwd
+            if (itemPath[0].toUpperCase() === cwd[0].toUpperCase()) {
+                // Drive only, e.g. C:
+                if (itemPath.length === 2) {
+                    // Preserve specified drive letter case (upper or lower)
+                    return `${itemPath[0]}:\\${cwd.substr(3)}`;
+                }
+                // Drive + path, e.g. C:foo
+                else {
+                    if (!cwd.endsWith('\\')) {
+                        cwd += '\\';
+                    }
+                    // Preserve specified drive letter case (upper or lower)
+                    return `${itemPath[0]}:\\${cwd.substr(3)}${itemPath.substr(2)}`;
+                }
+            }
+            // Different drive
+            else {
+                return `${itemPath[0]}:\\${itemPath.substr(2)}`;
+            }
+        }
+        // Check for itemPath like \ or \foo
+        else if (normalizeSeparators(itemPath).match(/^\\$|^\\[^\\]/)) {
+            const cwd = process.cwd();
+            assert_1.default(cwd.match(/^[A-Z]:\\/i), `Expected current directory to start with an absolute drive root. Actual '${cwd}'`);
+            return `${cwd[0]}:\\${itemPath.substr(1)}`;
+        }
+    }
+    assert_1.default(hasAbsoluteRoot(root), `ensureAbsoluteRoot parameter 'root' must have an absolute root`);
+    // Otherwise ensure root ends with a separator
+    if (root.endsWith('/') || (IS_WINDOWS && root.endsWith('\\'))) {
+        // Intentionally empty
+    }
+    else {
+        // Append separator
+        root += path.sep;
+    }
+    return root + itemPath;
+}
+exports.ensureAbsoluteRoot = ensureAbsoluteRoot;
+/**
+ * On Linux/macOS, true if path starts with `/`. On Windows, true for paths like:
+ * `\\hello\share` and `C:\hello` (and using alternate separator).
+ */
+function hasAbsoluteRoot(itemPath) {
+    assert_1.default(itemPath, `hasAbsoluteRoot parameter 'itemPath' must not be empty`);
+    // Normalize separators
+    itemPath = normalizeSeparators(itemPath);
+    // Windows
+    if (IS_WINDOWS) {
+        // E.g. \\hello\share or C:\hello
+        return itemPath.startsWith('\\\\') || /^[A-Z]:\\/i.test(itemPath);
+    }
+    // E.g. /hello
+    return itemPath.startsWith('/');
+}
+exports.hasAbsoluteRoot = hasAbsoluteRoot;
+/**
+ * On Linux/macOS, true if path starts with `/`. On Windows, true for paths like:
+ * `\`, `\hello`, `\\hello\share`, `C:`, and `C:\hello` (and using alternate separator).
+ */
+function hasRoot(itemPath) {
+    assert_1.default(itemPath, `isRooted parameter 'itemPath' must not be empty`);
+    // Normalize separators
+    itemPath = normalizeSeparators(itemPath);
+    // Windows
+    if (IS_WINDOWS) {
+        // E.g. \ or \hello or \\hello
+        // E.g. C: or C:\hello
+        return itemPath.startsWith('\\') || /^[A-Z]:/i.test(itemPath);
+    }
+    // E.g. /hello
+    return itemPath.startsWith('/');
+}
+exports.hasRoot = hasRoot;
+/**
+ * Removes redundant slashes and converts `/` to `\` on Windows
+ */
+function normalizeSeparators(p) {
+    p = p || '';
+    // Windows
+    if (IS_WINDOWS) {
+        // Convert slashes on Windows
+        p = p.replace(/\//g, '\\');
+        // Remove redundant slashes
+        const isUnc = /^\\\\+[^\\]/.test(p); // e.g. \\hello
+        return (isUnc ? '\\' : '') + p.replace(/\\\\+/g, '\\'); // preserve leading \\ for UNC
+    }
+    // Remove redundant slashes
+    return p.replace(/\/\/+/g, '/');
+}
+exports.normalizeSeparators = normalizeSeparators;
+/**
+ * Normalizes the path separators and trims the trailing separator (when safe).
+ * For example, `/foo/ => /foo` but `/ => /`
+ */
+function safeTrimTrailingSeparator(p) {
+    // Short-circuit if empty
+    if (!p) {
+        return '';
+    }
+    // Normalize separators
+    p = normalizeSeparators(p);
+    // No trailing slash
+    if (!p.endsWith(path.sep)) {
+        return p;
+    }
+    // Check '/' on Linux/macOS and '\' on Windows
+    if (p === path.sep) {
+        return p;
+    }
+    // On Windows check if drive root. E.g. C:\
+    if (IS_WINDOWS && /^[A-Z]:\\$/i.test(p)) {
+        return p;
+    }
+    // Otherwise trim trailing slash
+    return p.substr(0, p.length - 1);
+}
+exports.safeTrimTrailingSeparator = safeTrimTrailingSeparator;
+//# sourceMappingURL=internal-path-helper.js.map
+
+/***/ }),
+
+/***/ 6836:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const path = __importStar(__webpack_require__(5622));
+const pathHelper = __importStar(__webpack_require__(1849));
+const assert_1 = __importDefault(__webpack_require__(2357));
+const IS_WINDOWS = process.platform === 'win32';
+/**
+ * Helper class for parsing paths into segments
+ */
+class Path {
+    /**
+     * Constructs a Path
+     * @param itemPath Path or array of segments
+     */
+    constructor(itemPath) {
+        this.segments = [];
+        // String
+        if (typeof itemPath === 'string') {
+            assert_1.default(itemPath, `Parameter 'itemPath' must not be empty`);
+            // Normalize slashes and trim unnecessary trailing slash
+            itemPath = pathHelper.safeTrimTrailingSeparator(itemPath);
+            // Not rooted
+            if (!pathHelper.hasRoot(itemPath)) {
+                this.segments = itemPath.split(path.sep);
+            }
+            // Rooted
+            else {
+                // Add all segments, while not at the root
+                let remaining = itemPath;
+                let dir = pathHelper.dirname(remaining);
+                while (dir !== remaining) {
+                    // Add the segment
+                    const basename = path.basename(remaining);
+                    this.segments.unshift(basename);
+                    // Truncate the last segment
+                    remaining = dir;
+                    dir = pathHelper.dirname(remaining);
+                }
+                // Remainder is the root
+                this.segments.unshift(remaining);
+            }
+        }
+        // Array
+        else {
+            // Must not be empty
+            assert_1.default(itemPath.length > 0, `Parameter 'itemPath' must not be an empty array`);
+            // Each segment
+            for (let i = 0; i < itemPath.length; i++) {
+                let segment = itemPath[i];
+                // Must not be empty
+                assert_1.default(segment, `Parameter 'itemPath' must not contain any empty segments`);
+                // Normalize slashes
+                segment = pathHelper.normalizeSeparators(itemPath[i]);
+                // Root segment
+                if (i === 0 && pathHelper.hasRoot(segment)) {
+                    segment = pathHelper.safeTrimTrailingSeparator(segment);
+                    assert_1.default(segment === pathHelper.dirname(segment), `Parameter 'itemPath' root segment contains information for multiple segments`);
+                    this.segments.push(segment);
+                }
+                // All other segments
+                else {
+                    // Must not contain slash
+                    assert_1.default(!segment.includes(path.sep), `Parameter 'itemPath' contains unexpected path separators`);
+                    this.segments.push(segment);
+                }
+            }
+        }
+    }
+    /**
+     * Converts the path to it's string representation
+     */
+    toString() {
+        // First segment
+        let result = this.segments[0];
+        // All others
+        let skipSlash = result.endsWith(path.sep) || (IS_WINDOWS && /^[A-Z]:$/i.test(result));
+        for (let i = 1; i < this.segments.length; i++) {
+            if (skipSlash) {
+                skipSlash = false;
+            }
+            else {
+                result += path.sep;
+            }
+            result += this.segments[i];
+        }
+        return result;
+    }
+}
+exports.Path = Path;
+//# sourceMappingURL=internal-path.js.map
+
+/***/ }),
+
+/***/ 9005:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const pathHelper = __importStar(__webpack_require__(1849));
+const internal_match_kind_1 = __webpack_require__(1063);
+const IS_WINDOWS = process.platform === 'win32';
+/**
+ * Given an array of patterns, returns an array of paths to search.
+ * Duplicates and paths under other included paths are filtered out.
+ */
+function getSearchPaths(patterns) {
+    // Ignore negate patterns
+    patterns = patterns.filter(x => !x.negate);
+    // Create a map of all search paths
+    const searchPathMap = {};
+    for (const pattern of patterns) {
+        const key = IS_WINDOWS
+            ? pattern.searchPath.toUpperCase()
+            : pattern.searchPath;
+        searchPathMap[key] = 'candidate';
+    }
+    const result = [];
+    for (const pattern of patterns) {
+        // Check if already included
+        const key = IS_WINDOWS
+            ? pattern.searchPath.toUpperCase()
+            : pattern.searchPath;
+        if (searchPathMap[key] === 'included') {
+            continue;
+        }
+        // Check for an ancestor search path
+        let foundAncestor = false;
+        let tempKey = key;
+        let parent = pathHelper.dirname(tempKey);
+        while (parent !== tempKey) {
+            if (searchPathMap[parent]) {
+                foundAncestor = true;
+                break;
+            }
+            tempKey = parent;
+            parent = pathHelper.dirname(tempKey);
+        }
+        // Include the search pattern in the result
+        if (!foundAncestor) {
+            result.push(pattern.searchPath);
+            searchPathMap[key] = 'included';
+        }
+    }
+    return result;
+}
+exports.getSearchPaths = getSearchPaths;
+/**
+ * Matches the patterns against the path
+ */
+function match(patterns, itemPath) {
+    let result = internal_match_kind_1.MatchKind.None;
+    for (const pattern of patterns) {
+        if (pattern.negate) {
+            result &= ~pattern.match(itemPath);
+        }
+        else {
+            result |= pattern.match(itemPath);
+        }
+    }
+    return result;
+}
+exports.match = match;
+/**
+ * Checks whether to descend further into the directory
+ */
+function partialMatch(patterns, itemPath) {
+    return patterns.some(x => !x.negate && x.partialMatch(itemPath));
+}
+exports.partialMatch = partialMatch;
+//# sourceMappingURL=internal-pattern-helper.js.map
+
+/***/ }),
+
+/***/ 4536:
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+"use strict";
+
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const os = __importStar(__webpack_require__(2087));
+const path = __importStar(__webpack_require__(5622));
+const pathHelper = __importStar(__webpack_require__(1849));
+const assert_1 = __importDefault(__webpack_require__(2357));
+const minimatch_1 = __webpack_require__(3973);
+const internal_match_kind_1 = __webpack_require__(1063);
+const internal_path_1 = __webpack_require__(6836);
+const IS_WINDOWS = process.platform === 'win32';
+class Pattern {
+    constructor(patternOrNegate, segments, homedir) {
+        /**
+         * Indicates whether matches should be excluded from the result set
+         */
+        this.negate = false;
+        // Pattern overload
+        let pattern;
+        if (typeof patternOrNegate === 'string') {
+            pattern = patternOrNegate.trim();
+        }
+        // Segments overload
+        else {
+            // Convert to pattern
+            segments = segments || [];
+            assert_1.default(segments.length, `Parameter 'segments' must not empty`);
+            const root = Pattern.getLiteral(segments[0]);
+            assert_1.default(root && pathHelper.hasAbsoluteRoot(root), `Parameter 'segments' first element must be a root path`);
+            pattern = new internal_path_1.Path(segments).toString().trim();
+            if (patternOrNegate) {
+                pattern = `!${pattern}`;
+            }
+        }
+        // Negate
+        while (pattern.startsWith('!')) {
+            this.negate = !this.negate;
+            pattern = pattern.substr(1).trim();
+        }
+        // Normalize slashes and ensures absolute root
+        pattern = Pattern.fixupPattern(pattern, homedir);
+        // Segments
+        this.segments = new internal_path_1.Path(pattern).segments;
+        // Trailing slash indicates the pattern should only match directories, not regular files
+        this.trailingSeparator = pathHelper
+            .normalizeSeparators(pattern)
+            .endsWith(path.sep);
+        pattern = pathHelper.safeTrimTrailingSeparator(pattern);
+        // Search path (literal path prior to the first glob segment)
+        let foundGlob = false;
+        const searchSegments = this.segments
+            .map(x => Pattern.getLiteral(x))
+            .filter(x => !foundGlob && !(foundGlob = x === ''));
+        this.searchPath = new internal_path_1.Path(searchSegments).toString();
+        // Root RegExp (required when determining partial match)
+        this.rootRegExp = new RegExp(Pattern.regExpEscape(searchSegments[0]), IS_WINDOWS ? 'i' : '');
+        // Create minimatch
+        const minimatchOptions = {
+            dot: true,
+            nobrace: true,
+            nocase: IS_WINDOWS,
+            nocomment: true,
+            noext: true,
+            nonegate: true
+        };
+        pattern = IS_WINDOWS ? pattern.replace(/\\/g, '/') : pattern;
+        this.minimatch = new minimatch_1.Minimatch(pattern, minimatchOptions);
+    }
+    /**
+     * Matches the pattern against the specified path
+     */
+    match(itemPath) {
+        // Last segment is globstar?
+        if (this.segments[this.segments.length - 1] === '**') {
+            // Normalize slashes
+            itemPath = pathHelper.normalizeSeparators(itemPath);
+            // Append a trailing slash. Otherwise Minimatch will not match the directory immediately
+            // preceding the globstar. For example, given the pattern `/foo/**`, Minimatch returns
+            // false for `/foo` but returns true for `/foo/`. Append a trailing slash to handle that quirk.
+            if (!itemPath.endsWith(path.sep)) {
+                // Note, this is safe because the constructor ensures the pattern has an absolute root.
+                // For example, formats like C: and C:foo on Windows are resolved to an absolute root.
+                itemPath = `${itemPath}${path.sep}`;
+            }
+        }
+        else {
+            // Normalize slashes and trim unnecessary trailing slash
+            itemPath = pathHelper.safeTrimTrailingSeparator(itemPath);
+        }
+        // Match
+        if (this.minimatch.match(itemPath)) {
+            return this.trailingSeparator ? internal_match_kind_1.MatchKind.Directory : internal_match_kind_1.MatchKind.All;
+        }
+        return internal_match_kind_1.MatchKind.None;
+    }
+    /**
+     * Indicates whether the pattern may match descendants of the specified path
+     */
+    partialMatch(itemPath) {
+        // Normalize slashes and trim unnecessary trailing slash
+        itemPath = pathHelper.safeTrimTrailingSeparator(itemPath);
+        // matchOne does not handle root path correctly
+        if (pathHelper.dirname(itemPath) === itemPath) {
+            return this.rootRegExp.test(itemPath);
+        }
+        return this.minimatch.matchOne(itemPath.split(IS_WINDOWS ? /\\+/ : /\/+/), this.minimatch.set[0], true);
+    }
+    /**
+     * Escapes glob patterns within a path
+     */
+    static globEscape(s) {
+        return (IS_WINDOWS ? s : s.replace(/\\/g, '\\\\')) // escape '\' on Linux/macOS
+            .replace(/(\[)(?=[^/]+\])/g, '[[]') // escape '[' when ']' follows within the path segment
+            .replace(/\?/g, '[?]') // escape '?'
+            .replace(/\*/g, '[*]'); // escape '*'
+    }
+    /**
+     * Normalizes slashes and ensures absolute root
+     */
+    static fixupPattern(pattern, homedir) {
+        // Empty
+        assert_1.default(pattern, 'pattern cannot be empty');
+        // Must not contain `.` segment, unless first segment
+        // Must not contain `..` segment
+        const literalSegments = new internal_path_1.Path(pattern).segments.map(x => Pattern.getLiteral(x));
+        assert_1.default(literalSegments.every((x, i) => (x !== '.' || i === 0) && x !== '..'), `Invalid pattern '${pattern}'. Relative pathing '.' and '..' is not allowed.`);
+        // Must not contain globs in root, e.g. Windows UNC path \\foo\b*r
+        assert_1.default(!pathHelper.hasRoot(pattern) || literalSegments[0], `Invalid pattern '${pattern}'. Root segment must not contain globs.`);
+        // Normalize slashes
+        pattern = pathHelper.normalizeSeparators(pattern);
+        // Replace leading `.` segment
+        if (pattern === '.' || pattern.startsWith(`.${path.sep}`)) {
+            pattern = Pattern.globEscape(process.cwd()) + pattern.substr(1);
+        }
+        // Replace leading `~` segment
+        else if (pattern === '~' || pattern.startsWith(`~${path.sep}`)) {
+            homedir = homedir || os.homedir();
+            assert_1.default(homedir, 'Unable to determine HOME directory');
+            assert_1.default(pathHelper.hasAbsoluteRoot(homedir), `Expected HOME directory to be a rooted path. Actual '${homedir}'`);
+            pattern = Pattern.globEscape(homedir) + pattern.substr(1);
+        }
+        // Replace relative drive root, e.g. pattern is C: or C:foo
+        else if (IS_WINDOWS &&
+            (pattern.match(/^[A-Z]:$/i) || pattern.match(/^[A-Z]:[^\\]/i))) {
+            let root = pathHelper.ensureAbsoluteRoot('C:\\dummy-root', pattern.substr(0, 2));
+            if (pattern.length > 2 && !root.endsWith('\\')) {
+                root += '\\';
+            }
+            pattern = Pattern.globEscape(root) + pattern.substr(2);
+        }
+        // Replace relative root, e.g. pattern is \ or \foo
+        else if (IS_WINDOWS && (pattern === '\\' || pattern.match(/^\\[^\\]/))) {
+            let root = pathHelper.ensureAbsoluteRoot('C:\\dummy-root', '\\');
+            if (!root.endsWith('\\')) {
+                root += '\\';
+            }
+            pattern = Pattern.globEscape(root) + pattern.substr(1);
+        }
+        // Otherwise ensure absolute root
+        else {
+            pattern = pathHelper.ensureAbsoluteRoot(Pattern.globEscape(process.cwd()), pattern);
+        }
+        return pathHelper.normalizeSeparators(pattern);
+    }
+    /**
+     * Attempts to unescape a pattern segment to create a literal path segment.
+     * Otherwise returns empty string.
+     */
+    static getLiteral(segment) {
+        let literal = '';
+        for (let i = 0; i < segment.length; i++) {
+            const c = segment[i];
+            // Escape
+            if (c === '\\' && !IS_WINDOWS && i + 1 < segment.length) {
+                literal += segment[++i];
+                continue;
+            }
+            // Wildcard
+            else if (c === '*' || c === '?') {
+                return '';
+            }
+            // Character set
+            else if (c === '[' && i + 1 < segment.length) {
+                let set = '';
+                let closed = -1;
+                for (let i2 = i + 1; i2 < segment.length; i2++) {
+                    const c2 = segment[i2];
+                    // Escape
+                    if (c2 === '\\' && !IS_WINDOWS && i2 + 1 < segment.length) {
+                        set += segment[++i2];
+                        continue;
+                    }
+                    // Closed
+                    else if (c2 === ']') {
+                        closed = i2;
+                        break;
+                    }
+                    // Otherwise
+                    else {
+                        set += c2;
+                    }
+                }
+                // Closed?
+                if (closed >= 0) {
+                    // Cannot convert
+                    if (set.length > 1) {
+                        return '';
+                    }
+                    // Convert to literal
+                    if (set) {
+                        literal += set;
+                        i = closed;
+                        continue;
+                    }
+                }
+                // Otherwise fall thru
+            }
+            // Append
+            literal += c;
+        }
+        return literal;
+    }
+    /**
+     * Escapes regexp special characters
+     * https://javascript.info/regexp-escaping
+     */
+    static regExpEscape(s) {
+        return s.replace(/[[\\^$.|?*+()]/g, '\\$&');
+    }
+}
+exports.Pattern = Pattern;
+//# sourceMappingURL=internal-pattern.js.map
+
+/***/ }),
+
+/***/ 9117:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+class SearchState {
+    constructor(path, level) {
+        this.path = path;
+        this.level = level;
+    }
+}
+exports.SearchState = SearchState;
+//# sourceMappingURL=internal-search-state.js.map
 
 /***/ }),
 
@@ -1013,6 +2160,7 @@ function Ajv(opts) {
   this._metaOpts = getMetaSchemaOptions(this);
 
   if (opts.formats) addInitialFormats(this);
+  if (opts.keywords) addInitialKeywords(this);
   addDefaultMetaSchema(this);
   if (typeof opts.meta == 'object') this.addMetaSchema(opts.meta);
   if (opts.nullable) this.addKeyword('nullable', {metaSchema: {type: 'boolean'}});
@@ -1411,6 +2559,14 @@ function addInitialFormats(self) {
 }
 
 
+function addInitialKeywords(self) {
+  for (var name in self._opts.keywords) {
+    var keyword = self._opts.keywords[name];
+    self.addKeyword(name, keyword);
+  }
+}
+
+
 function checkUnique(self, id) {
   if (self._schemas[id] || self._refs[id])
     throw new Error('schema with key or id "' + id + '" already exists');
@@ -1627,8 +2783,8 @@ var util = __webpack_require__(6578);
 
 var DATE = /^(\d\d\d\d)-(\d\d)-(\d\d)$/;
 var DAYS = [0,31,28,31,30,31,30,31,31,30,31,30,31];
-var TIME = /^(\d\d):(\d\d):(\d\d)(\.\d+)?(z|[+-]\d\d:\d\d)?$/i;
-var HOSTNAME = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*$/i;
+var TIME = /^(\d\d):(\d\d):(\d\d)(\.\d+)?(z|[+-]\d\d(?::?\d\d)?)?$/i;
+var HOSTNAME = /^(?=.{1,253}\.?$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*\.?$/i;
 var URI = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;
 var URIREF = /^(?:[a-z][a-z0-9+\-.]*:)?(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'"()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?(?:\?(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;
 // uri-template: https://tools.ietf.org/html/rfc6570
@@ -1636,8 +2792,8 @@ var URITEMPLATE = /^(?:(?:[^\x00-\x20"'<>%\\^`{|}]|%[0-9a-f]{2})|\{[+#./;?&=,!@|
 // For the source: https://gist.github.com/dperini/729294
 // For test cases: https://mathiasbynens.be/demo/url-regex
 // @todo Delete current URL in favour of the commented out URL rule when this issue is fixed https://github.com/eslint/eslint/issues/7983.
-// var URL = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u{00a1}-\u{ffff}0-9]+-?)*[a-z\u{00a1}-\u{ffff}0-9]+)(?:\.(?:[a-z\u{00a1}-\u{ffff}0-9]+-?)*[a-z\u{00a1}-\u{ffff}0-9]+)*(?:\.(?:[a-z\u{00a1}-\u{ffff}]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/iu;
-var URL = /^(?:(?:http[s\u017F]?|ftp):\/\/)(?:(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+(?::(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*)?@)?(?:(?!10(?:\.[0-9]{1,3}){3})(?!127(?:\.[0-9]{1,3}){3})(?!169\.254(?:\.[0-9]{1,3}){2})(?!192\.168(?:\.[0-9]{1,3}){2})(?!172\.(?:1[6-9]|2[0-9]|3[01])(?:\.[0-9]{1,3}){2})(?:[1-9][0-9]?|1[0-9][0-9]|2[01][0-9]|22[0-3])(?:\.(?:1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])){2}(?:\.(?:[1-9][0-9]?|1[0-9][0-9]|2[0-4][0-9]|25[0-4]))|(?:(?:(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+-?)*(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+)(?:\.(?:(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+-?)*(?:[0-9KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+)*(?:\.(?:(?:[KSa-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]){2,})))(?::[0-9]{2,5})?(?:\/(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*)?$/i;
+// var URL = /^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u{00a1}-\u{ffff}0-9]+-)*[a-z\u{00a1}-\u{ffff}0-9]+)(?:\.(?:[a-z\u{00a1}-\u{ffff}0-9]+-)*[a-z\u{00a1}-\u{ffff}0-9]+)*(?:\.(?:[a-z\u{00a1}-\u{ffff}]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/iu;
+var URL = /^(?:(?:http[s\u017F]?|ftp):\/\/)(?:(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+(?::(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*)?@)?(?:(?!10(?:\.[0-9]{1,3}){3})(?!127(?:\.[0-9]{1,3}){3})(?!169\.254(?:\.[0-9]{1,3}){2})(?!192\.168(?:\.[0-9]{1,3}){2})(?!172\.(?:1[6-9]|2[0-9]|3[01])(?:\.[0-9]{1,3}){2})(?:[1-9][0-9]?|1[0-9][0-9]|2[01][0-9]|22[0-3])(?:\.(?:1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])){2}(?:\.(?:[1-9][0-9]?|1[0-9][0-9]|2[0-4][0-9]|25[0-4]))|(?:(?:(?:[0-9a-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+-)*(?:[0-9a-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+)(?:\.(?:(?:[0-9a-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+-)*(?:[0-9a-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])+)*(?:\.(?:(?:[a-z\xA1-\uD7FF\uE000-\uFFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF]){2,})))(?::[0-9]{2,5})?(?:\/(?:[\0-\x08\x0E-\x1F!-\x9F\xA1-\u167F\u1681-\u1FFF\u200B-\u2027\u202A-\u202E\u2030-\u205E\u2060-\u2FFF\u3001-\uD7FF\uE000-\uFEFE\uFF00-\uFFFF]|[\uD800-\uDBFF][\uDC00-\uDFFF]|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:[^\uD800-\uDBFF]|^)[\uDC00-\uDFFF])*)?$/i;
 var UUID = /^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 var JSON_POINTER = /^(?:\/(?:[^~/]|~0|~1)*)*$/;
 var JSON_POINTER_URI_FRAGMENT = /^#(?:\/(?:[a-z0-9_\-.!$&'()*+,;:=@]|%[0-9a-f]{2}|~0|~1)*)*$/i;
@@ -1656,11 +2812,11 @@ formats.fast = {
   // date: http://tools.ietf.org/html/rfc3339#section-5.6
   date: /^\d\d\d\d-[0-1]\d-[0-3]\d$/,
   // date-time: http://tools.ietf.org/html/rfc3339#section-5.6
-  time: /^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d:\d\d)?$/i,
-  'date-time': /^\d\d\d\d-[0-1]\d-[0-3]\d[t\s](?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d:\d\d)$/i,
+  time: /^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)?$/i,
+  'date-time': /^\d\d\d\d-[0-1]\d-[0-3]\d[t\s](?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)$/i,
   // uri: https://github.com/mafintosh/is-my-json-valid/blob/master/formats.js
-  uri: /^(?:[a-z][a-z0-9+-.]*:)(?:\/?\/)?[^\s]*$/i,
-  'uri-reference': /^(?:(?:[a-z][a-z0-9+-.]*:)?\/?\/)?(?:[^\\\s#][^\s#]*)?(?:#[^\\\s]*)?$/i,
+  uri: /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/)?[^\s]*$/i,
+  'uri-reference': /^(?:(?:[a-z][a-z0-9+\-.]*:)?\/?\/)?(?:[^\\\s#][^\s#]*)?(?:#[^\\\s]*)?$/i,
   'uri-template': URITEMPLATE,
   url: URL,
   // email (sources from jsen validator):
@@ -1693,7 +2849,7 @@ formats.full = {
   'uri-template': URITEMPLATE,
   url: URL,
   email: /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,
-  hostname: hostname,
+  hostname: HOSTNAME,
   ipv4: /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
   ipv6: /^\s*(?:(?:(?:[0-9a-f]{1,4}:){7}(?:[0-9a-f]{1,4}|:))|(?:(?:[0-9a-f]{1,4}:){6}(?::[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(?:(?:[0-9a-f]{1,4}:){5}(?:(?:(?::[0-9a-f]{1,4}){1,2})|:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(?:(?:[0-9a-f]{1,4}:){4}(?:(?:(?::[0-9a-f]{1,4}){1,3})|(?:(?::[0-9a-f]{1,4})?:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9a-f]{1,4}:){3}(?:(?:(?::[0-9a-f]{1,4}){1,4})|(?:(?::[0-9a-f]{1,4}){0,2}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9a-f]{1,4}:){2}(?:(?:(?::[0-9a-f]{1,4}){1,5})|(?:(?::[0-9a-f]{1,4}){0,3}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?:(?:[0-9a-f]{1,4}:){1}(?:(?:(?::[0-9a-f]{1,4}){1,6})|(?:(?::[0-9a-f]{1,4}){0,4}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(?::(?:(?:(?::[0-9a-f]{1,4}){1,7})|(?:(?::[0-9a-f]{1,4}){0,5}:(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(?:%.+)?\s*$/i,
   regex: regex,
@@ -1743,13 +2899,6 @@ function date_time(str) {
   // http://tools.ietf.org/html/rfc3339#section-5.6
   var dateTime = str.split(DATE_TIME_SEPARATOR);
   return dateTime.length == 2 && date(dateTime[0]) && time(dateTime[1], true);
-}
-
-
-function hostname(str) {
-  // https://tools.ietf.org/html/rfc1034#section-3.5
-  // https://tools.ietf.org/html/rfc1123#section-2
-  return str.length <= 255 && HOSTNAME.test(str);
 }
 
 
@@ -1893,7 +3042,7 @@ function compile(schema, root, localRefs, baseId) {
                    + vars(defaults, defaultCode) + vars(customRules, customRuleCode)
                    + sourceCode;
 
-    if (opts.processCode) sourceCode = opts.processCode(sourceCode);
+    if (opts.processCode) sourceCode = opts.processCode(sourceCode, _schema);
     // console.log('\n\n\n *** \n', JSON.stringify(sourceCode));
     var validate;
     try {
@@ -2585,8 +3734,6 @@ module.exports = {
   ucs2length: __webpack_require__(4580),
   varOccurences: varOccurences,
   varReplace: varReplace,
-  cleanUpCode: cleanUpCode,
-  finalCleanUpCode: finalCleanUpCode,
   schemaHasRules: schemaHasRules,
   schemaHasRulesExcept: schemaHasRulesExcept,
   schemaUnknownRules: schemaUnknownRules,
@@ -2608,7 +3755,7 @@ function copy(o, to) {
 }
 
 
-function checkDataType(dataType, data, negate) {
+function checkDataType(dataType, data, strictNumbers, negate) {
   var EQUAL = negate ? ' !== ' : ' === '
     , AND = negate ? ' || ' : ' && '
     , OK = negate ? '!' : ''
@@ -2621,15 +3768,18 @@ function checkDataType(dataType, data, negate) {
                           NOT + 'Array.isArray(' + data + '))';
     case 'integer': return '(typeof ' + data + EQUAL + '"number"' + AND +
                            NOT + '(' + data + ' % 1)' +
-                           AND + data + EQUAL + data + ')';
+                           AND + data + EQUAL + data +
+                           (strictNumbers ? (AND + OK + 'isFinite(' + data + ')') : '') + ')';
+    case 'number': return '(typeof ' + data + EQUAL + '"' + dataType + '"' +
+                          (strictNumbers ? (AND + OK + 'isFinite(' + data + ')') : '') + ')';
     default: return 'typeof ' + data + EQUAL + '"' + dataType + '"';
   }
 }
 
 
-function checkDataTypes(dataTypes, data) {
+function checkDataTypes(dataTypes, data, strictNumbers) {
   switch (dataTypes.length) {
-    case 1: return checkDataType(dataTypes[0], data, true);
+    case 1: return checkDataType(dataTypes[0], data, strictNumbers, true);
     default:
       var code = '';
       var types = toHash(dataTypes);
@@ -2642,7 +3792,7 @@ function checkDataTypes(dataTypes, data) {
       }
       if (types.number) delete types.integer;
       for (var t in types)
-        code += (code ? ' && ' : '' ) + checkDataType(t, data, true);
+        code += (code ? ' && ' : '' ) + checkDataType(t, data, strictNumbers, true);
 
       return code;
   }
@@ -2705,42 +3855,6 @@ function varReplace(str, dataVar, expr) {
   dataVar += '([^0-9])';
   expr = expr.replace(/\$/g, '$$$$');
   return str.replace(new RegExp(dataVar, 'g'), expr + '$1');
-}
-
-
-var EMPTY_ELSE = /else\s*{\s*}/g
-  , EMPTY_IF_NO_ELSE = /if\s*\([^)]+\)\s*\{\s*\}(?!\s*else)/g
-  , EMPTY_IF_WITH_ELSE = /if\s*\(([^)]+)\)\s*\{\s*\}\s*else(?!\s*if)/g;
-function cleanUpCode(out) {
-  return out.replace(EMPTY_ELSE, '')
-            .replace(EMPTY_IF_NO_ELSE, '')
-            .replace(EMPTY_IF_WITH_ELSE, 'if (!($1))');
-}
-
-
-var ERRORS_REGEXP = /[^v.]errors/g
-  , REMOVE_ERRORS = /var errors = 0;|var vErrors = null;|validate.errors = vErrors;/g
-  , REMOVE_ERRORS_ASYNC = /var errors = 0;|var vErrors = null;/g
-  , RETURN_VALID = 'return errors === 0;'
-  , RETURN_TRUE = 'validate.errors = null; return true;'
-  , RETURN_ASYNC = /if \(errors === 0\) return data;\s*else throw new ValidationError\(vErrors\);/
-  , RETURN_DATA_ASYNC = 'return data;'
-  , ROOTDATA_REGEXP = /[^A-Za-z_$]rootData[^A-Za-z0-9_$]/g
-  , REMOVE_ROOTDATA = /if \(rootData === undefined\) rootData = data;/;
-
-function finalCleanUpCode(out, async) {
-  var matches = out.match(ERRORS_REGEXP);
-  if (matches && matches.length == 2) {
-    out = async
-          ? out.replace(REMOVE_ERRORS_ASYNC, '')
-               .replace(RETURN_ASYNC, RETURN_DATA_ASYNC)
-          : out.replace(REMOVE_ERRORS, '')
-               .replace(RETURN_VALID, RETURN_TRUE);
-  }
-
-  matches = out.match(ROOTDATA_REGEXP);
-  if (!matches || matches.length !== 3) return out;
-  return out.replace(REMOVE_ROOTDATA, '');
 }
 
 
@@ -2822,7 +3936,7 @@ function getData($data, lvl, paths) {
 
 function joinPaths (a, b) {
   if (a == '""') return b;
-  return (a + ' + ' + b).replace(/' \+ '/g, '');
+  return (a + ' + ' + b).replace(/([^\\])' \+ '/g, '$1');
 }
 
 
@@ -2892,7 +4006,7 @@ module.exports = function (metaSchema, keywordsJsonPointers) {
         keywords[key] = {
           anyOf: [
             schema,
-            { $ref: 'https://raw.githubusercontent.com/epoberezkin/ajv/master/lib/refs/data.json#' }
+            { $ref: 'https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#' }
           ]
         };
       }
@@ -2914,7 +4028,7 @@ module.exports = function (metaSchema, keywordsJsonPointers) {
 var metaSchema = __webpack_require__(38);
 
 module.exports = {
-  $id: 'https://github.com/epoberezkin/ajv/blob/master/lib/definition_schema.js',
+  $id: 'https://github.com/ajv-validator/ajv/blob/master/lib/definition_schema.js',
   definitions: {
     simpleTypes: metaSchema.definitions.simpleTypes
   },
@@ -2980,6 +4094,12 @@ module.exports = function generate__limit(it, $keyword, $ruleType) {
     $op = $isMax ? '<' : '>',
     $notOp = $isMax ? '>' : '<',
     $errorKeyword = undefined;
+  if (!($isData || typeof $schema == 'number' || $schema === undefined)) {
+    throw new Error($keyword + ' must be number');
+  }
+  if (!($isDataExcl || $schemaExcl === undefined || typeof $schemaExcl == 'number' || typeof $schemaExcl == 'boolean')) {
+    throw new Error($exclusiveKeyword + ' must be number or boolean');
+  }
   if ($isDataExcl) {
     var $schemaValueExcl = it.util.getData($schemaExcl.$data, $dataLvl, it.dataPathArr),
       $exclusive = 'exclusive' + $lvl,
@@ -3138,6 +4258,9 @@ module.exports = function generate__limitItems(it, $keyword, $ruleType) {
   } else {
     $schemaValue = $schema;
   }
+  if (!($isData || typeof $schema == 'number')) {
+    throw new Error($keyword + ' must be number');
+  }
   var $op = $keyword == 'maxItems' ? '>' : '<';
   out += 'if ( ';
   if ($isData) {
@@ -3222,6 +4345,9 @@ module.exports = function generate__limitLength(it, $keyword, $ruleType) {
     $schemaValue = 'schema' + $lvl;
   } else {
     $schemaValue = $schema;
+  }
+  if (!($isData || typeof $schema == 'number')) {
+    throw new Error($keyword + ' must be number');
   }
   var $op = $keyword == 'maxLength' ? '>' : '<';
   out += 'if ( ';
@@ -3313,6 +4439,9 @@ module.exports = function generate__limitProperties(it, $keyword, $ruleType) {
   } else {
     $schemaValue = $schema;
   }
+  if (!($isData || typeof $schema == 'number')) {
+    throw new Error($keyword + ' must be number');
+  }
   var $op = $keyword == 'maxProperties' ? '>' : '<';
   out += 'if ( ';
   if ($isData) {
@@ -3398,7 +4527,7 @@ module.exports = function generate_allOf(it, $keyword, $ruleType) {
       l1 = arr1.length - 1;
     while ($i < l1) {
       $sch = arr1[$i += 1];
-      if ((it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all))) {
+      if ((it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all))) {
         $allSchemasEmpty = false;
         $it.schema = $sch;
         $it.schemaPath = $schemaPath + '[' + $i + ']';
@@ -3419,7 +4548,6 @@ module.exports = function generate_allOf(it, $keyword, $ruleType) {
       out += ' ' + ($closingBraces.slice(0, -1)) + ' ';
     }
   }
-  out = it.util.cleanUpCode(out);
   return out;
 }
 
@@ -3447,7 +4575,7 @@ module.exports = function generate_anyOf(it, $keyword, $ruleType) {
   $it.level++;
   var $nextValid = 'valid' + $it.level;
   var $noEmptySchema = $schema.every(function($sch) {
-    return (it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all));
+    return (it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all));
   });
   if ($noEmptySchema) {
     var $currentBaseId = $it.baseId;
@@ -3496,7 +4624,6 @@ module.exports = function generate_anyOf(it, $keyword, $ruleType) {
     if (it.opts.allErrors) {
       out += ' } ';
     }
-    out = it.util.cleanUpCode(out);
   } else {
     if ($breakOnError) {
       out += ' if (true) { ';
@@ -3618,7 +4745,7 @@ module.exports = function generate_contains(it, $keyword, $ruleType) {
     $dataNxt = $it.dataLevel = it.dataLevel + 1,
     $nextData = 'data' + $dataNxt,
     $currentBaseId = it.baseId,
-    $nonEmptySchema = (it.opts.strictKeywords ? typeof $schema == 'object' && Object.keys($schema).length > 0 : it.util.schemaHasRules($schema, it.RULES.all));
+    $nonEmptySchema = (it.opts.strictKeywords ? (typeof $schema == 'object' && Object.keys($schema).length > 0) || $schema === false : it.util.schemaHasRules($schema, it.RULES.all));
   out += 'var ' + ($errs) + ' = errors;var ' + ($valid) + ';';
   if ($nonEmptySchema) {
     var $wasComposite = it.compositeRule;
@@ -3677,7 +4804,6 @@ module.exports = function generate_contains(it, $keyword, $ruleType) {
   if (it.opts.allErrors) {
     out += ' } ';
   }
-  out = it.util.cleanUpCode(out);
   return out;
 }
 
@@ -3943,6 +5069,7 @@ module.exports = function generate_dependencies(it, $keyword, $ruleType) {
     $propertyDeps = {},
     $ownProperties = it.opts.ownProperties;
   for ($property in $schema) {
+    if ($property == '__proto__') continue;
     var $sch = $schema[$property];
     var $deps = Array.isArray($sch) ? $propertyDeps : $schemaDeps;
     $deps[$property] = $sch;
@@ -4068,7 +5195,7 @@ module.exports = function generate_dependencies(it, $keyword, $ruleType) {
   var $currentBaseId = $it.baseId;
   for (var $property in $schemaDeps) {
     var $sch = $schemaDeps[$property];
-    if ((it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all))) {
+    if ((it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all))) {
       out += ' ' + ($nextValid) + ' = true; if ( ' + ($data) + (it.util.getProperty($property)) + ' !== undefined ';
       if ($ownProperties) {
         out += ' && Object.prototype.hasOwnProperty.call(' + ($data) + ', \'' + (it.util.escapeQuotes($property)) + '\') ';
@@ -4089,7 +5216,6 @@ module.exports = function generate_dependencies(it, $keyword, $ruleType) {
   if ($breakOnError) {
     out += '   ' + ($closingBraces) + ' if (' + ($errs) + ' == errors) {';
   }
-  out = it.util.cleanUpCode(out);
   return out;
 }
 
@@ -4349,8 +5475,8 @@ module.exports = function generate_if(it, $keyword, $ruleType) {
   var $nextValid = 'valid' + $it.level;
   var $thenSch = it.schema['then'],
     $elseSch = it.schema['else'],
-    $thenPresent = $thenSch !== undefined && (it.opts.strictKeywords ? typeof $thenSch == 'object' && Object.keys($thenSch).length > 0 : it.util.schemaHasRules($thenSch, it.RULES.all)),
-    $elsePresent = $elseSch !== undefined && (it.opts.strictKeywords ? typeof $elseSch == 'object' && Object.keys($elseSch).length > 0 : it.util.schemaHasRules($elseSch, it.RULES.all)),
+    $thenPresent = $thenSch !== undefined && (it.opts.strictKeywords ? (typeof $thenSch == 'object' && Object.keys($thenSch).length > 0) || $thenSch === false : it.util.schemaHasRules($thenSch, it.RULES.all)),
+    $elsePresent = $elseSch !== undefined && (it.opts.strictKeywords ? (typeof $elseSch == 'object' && Object.keys($elseSch).length > 0) || $elseSch === false : it.util.schemaHasRules($elseSch, it.RULES.all)),
     $currentBaseId = $it.baseId;
   if ($thenPresent || $elsePresent) {
     var $ifClause;
@@ -4428,7 +5554,6 @@ module.exports = function generate_if(it, $keyword, $ruleType) {
     if ($breakOnError) {
       out += ' else { ';
     }
-    out = it.util.cleanUpCode(out);
   } else {
     if ($breakOnError) {
       out += ' if (true) { ';
@@ -4553,7 +5678,7 @@ module.exports = function generate_items(it, $keyword, $ruleType) {
         l1 = arr1.length - 1;
       while ($i < l1) {
         $sch = arr1[$i += 1];
-        if ((it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all))) {
+        if ((it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all))) {
           out += ' ' + ($nextValid) + ' = true; if (' + ($data) + '.length > ' + ($i) + ') { ';
           var $passData = $data + '[' + $i + ']';
           $it.schema = $sch;
@@ -4576,7 +5701,7 @@ module.exports = function generate_items(it, $keyword, $ruleType) {
         }
       }
     }
-    if (typeof $additionalItems == 'object' && (it.opts.strictKeywords ? typeof $additionalItems == 'object' && Object.keys($additionalItems).length > 0 : it.util.schemaHasRules($additionalItems, it.RULES.all))) {
+    if (typeof $additionalItems == 'object' && (it.opts.strictKeywords ? (typeof $additionalItems == 'object' && Object.keys($additionalItems).length > 0) || $additionalItems === false : it.util.schemaHasRules($additionalItems, it.RULES.all))) {
       $it.schema = $additionalItems;
       $it.schemaPath = it.schemaPath + '.additionalItems';
       $it.errSchemaPath = it.errSchemaPath + '/additionalItems';
@@ -4600,7 +5725,7 @@ module.exports = function generate_items(it, $keyword, $ruleType) {
         $closingBraces += '}';
       }
     }
-  } else if ((it.opts.strictKeywords ? typeof $schema == 'object' && Object.keys($schema).length > 0 : it.util.schemaHasRules($schema, it.RULES.all))) {
+  } else if ((it.opts.strictKeywords ? (typeof $schema == 'object' && Object.keys($schema).length > 0) || $schema === false : it.util.schemaHasRules($schema, it.RULES.all))) {
     $it.schema = $schema;
     $it.schemaPath = $schemaPath;
     $it.errSchemaPath = $errSchemaPath;
@@ -4623,7 +5748,6 @@ module.exports = function generate_items(it, $keyword, $ruleType) {
   if ($breakOnError) {
     out += ' ' + ($closingBraces) + ' if (' + ($errs) + ' == errors) {';
   }
-  out = it.util.cleanUpCode(out);
   return out;
 }
 
@@ -4651,6 +5775,9 @@ module.exports = function generate_multipleOf(it, $keyword, $ruleType) {
     $schemaValue = 'schema' + $lvl;
   } else {
     $schemaValue = $schema;
+  }
+  if (!($isData || typeof $schema == 'number')) {
+    throw new Error($keyword + ' must be number');
   }
   out += 'var division' + ($lvl) + ';if (';
   if ($isData) {
@@ -4733,7 +5860,7 @@ module.exports = function generate_not(it, $keyword, $ruleType) {
   var $it = it.util.copy(it);
   $it.level++;
   var $nextValid = 'valid' + $it.level;
-  if ((it.opts.strictKeywords ? typeof $schema == 'object' && Object.keys($schema).length > 0 : it.util.schemaHasRules($schema, it.RULES.all))) {
+  if ((it.opts.strictKeywords ? (typeof $schema == 'object' && Object.keys($schema).length > 0) || $schema === false : it.util.schemaHasRules($schema, it.RULES.all))) {
     $it.schema = $schema;
     $it.schemaPath = $schemaPath;
     $it.errSchemaPath = $errSchemaPath;
@@ -4839,7 +5966,7 @@ module.exports = function generate_oneOf(it, $keyword, $ruleType) {
       l1 = arr1.length - 1;
     while ($i < l1) {
       $sch = arr1[$i += 1];
-      if ((it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all))) {
+      if ((it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all))) {
         $it.schema = $sch;
         $it.schemaPath = $schemaPath + '[' + $i + ']';
         $it.errSchemaPath = $errSchemaPath + '/' + $i;
@@ -4995,9 +6122,9 @@ module.exports = function generate_properties(it, $keyword, $ruleType) {
     $dataNxt = $it.dataLevel = it.dataLevel + 1,
     $nextData = 'data' + $dataNxt,
     $dataProperties = 'dataProperties' + $lvl;
-  var $schemaKeys = Object.keys($schema || {}),
+  var $schemaKeys = Object.keys($schema || {}).filter(notProto),
     $pProperties = it.schema.patternProperties || {},
-    $pPropertyKeys = Object.keys($pProperties),
+    $pPropertyKeys = Object.keys($pProperties).filter(notProto),
     $aProperties = it.schema.additionalProperties,
     $someProperties = $schemaKeys.length || $pPropertyKeys.length,
     $noAdditional = $aProperties === false,
@@ -5007,7 +6134,13 @@ module.exports = function generate_properties(it, $keyword, $ruleType) {
     $ownProperties = it.opts.ownProperties,
     $currentBaseId = it.baseId;
   var $required = it.schema.required;
-  if ($required && !(it.opts.$data && $required.$data) && $required.length < it.opts.loopRequired) var $requiredHash = it.util.toHash($required);
+  if ($required && !(it.opts.$data && $required.$data) && $required.length < it.opts.loopRequired) {
+    var $requiredHash = it.util.toHash($required);
+  }
+
+  function notProto(p) {
+    return p !== '__proto__';
+  }
   out += 'var ' + ($errs) + ' = errors;var ' + ($nextValid) + ' = true;';
   if ($ownProperties) {
     out += ' var ' + ($dataProperties) + ' = undefined;';
@@ -5160,7 +6293,7 @@ module.exports = function generate_properties(it, $keyword, $ruleType) {
       while (i3 < l3) {
         $propertyKey = arr3[i3 += 1];
         var $sch = $schema[$propertyKey];
-        if ((it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all))) {
+        if ((it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all))) {
           var $prop = it.util.getProperty($propertyKey),
             $passData = $data + $prop,
             $hasDefault = $useDefaults && $sch.default !== undefined;
@@ -5263,7 +6396,7 @@ module.exports = function generate_properties(it, $keyword, $ruleType) {
       while (i4 < l4) {
         $pProperty = arr4[i4 += 1];
         var $sch = $pProperties[$pProperty];
-        if ((it.opts.strictKeywords ? typeof $sch == 'object' && Object.keys($sch).length > 0 : it.util.schemaHasRules($sch, it.RULES.all))) {
+        if ((it.opts.strictKeywords ? (typeof $sch == 'object' && Object.keys($sch).length > 0) || $sch === false : it.util.schemaHasRules($sch, it.RULES.all))) {
           $it.schema = $sch;
           $it.schemaPath = it.schemaPath + '.patternProperties' + it.util.getProperty($pProperty);
           $it.errSchemaPath = it.errSchemaPath + '/patternProperties/' + it.util.escapeFragment($pProperty);
@@ -5302,7 +6435,6 @@ module.exports = function generate_properties(it, $keyword, $ruleType) {
   if ($breakOnError) {
     out += ' ' + ($closingBraces) + ' if (' + ($errs) + ' == errors) {';
   }
-  out = it.util.cleanUpCode(out);
   return out;
 }
 
@@ -5329,7 +6461,7 @@ module.exports = function generate_propertyNames(it, $keyword, $ruleType) {
   $it.level++;
   var $nextValid = 'valid' + $it.level;
   out += 'var ' + ($errs) + ' = errors;';
-  if ((it.opts.strictKeywords ? typeof $schema == 'object' && Object.keys($schema).length > 0 : it.util.schemaHasRules($schema, it.RULES.all))) {
+  if ((it.opts.strictKeywords ? (typeof $schema == 'object' && Object.keys($schema).length > 0) || $schema === false : it.util.schemaHasRules($schema, it.RULES.all))) {
     $it.schema = $schema;
     $it.schemaPath = $schemaPath;
     $it.errSchemaPath = $errSchemaPath;
@@ -5392,7 +6524,6 @@ module.exports = function generate_propertyNames(it, $keyword, $ruleType) {
   if ($breakOnError) {
     out += ' ' + ($closingBraces) + ' if (' + ($errs) + ' == errors) {';
   }
-  out = it.util.cleanUpCode(out);
   return out;
 }
 
@@ -5565,7 +6696,7 @@ module.exports = function generate_required(it, $keyword, $ruleType) {
         while (i1 < l1) {
           $property = arr1[i1 += 1];
           var $propertySch = it.schema.properties[$property];
-          if (!($propertySch && (it.opts.strictKeywords ? typeof $propertySch == 'object' && Object.keys($propertySch).length > 0 : it.util.schemaHasRules($propertySch, it.RULES.all)))) {
+          if (!($propertySch && (it.opts.strictKeywords ? (typeof $propertySch == 'object' && Object.keys($propertySch).length > 0) || $propertySch === false : it.util.schemaHasRules($propertySch, it.RULES.all)))) {
             $required[$required.length] = $property;
           }
         }
@@ -5844,7 +6975,7 @@ module.exports = function generate_uniqueItems(it, $keyword, $ruleType) {
     } else {
       out += ' var itemIndices = {}, item; for (;i--;) { var item = ' + ($data) + '[i]; ';
       var $method = 'checkDataType' + ($typeIsArray ? 's' : '');
-      out += ' if (' + (it.util[$method]($itemType, 'item', true)) + ') continue; ';
+      out += ' if (' + (it.util[$method]($itemType, 'item', it.opts.strictNumbers, true)) + ') continue; ';
       if ($typeIsArray) {
         out += ' if (typeof item == \'string\') item = \'"\' + item; ';
       }
@@ -6000,7 +7131,7 @@ module.exports = function generate_validate(it, $keyword, $ruleType) {
     it.rootId = it.resolve.fullPath(it.self._getId(it.root.schema));
     it.baseId = it.baseId || it.rootId;
     delete it.isTop;
-    it.dataPathArr = [undefined];
+    it.dataPathArr = [""];
     if (it.schema.default !== undefined && it.opts.useDefaults && it.opts.strictDefaults) {
       var $defaultMsg = 'default is ignored in the schema root';
       if (it.opts.strictDefaults === 'log') it.logger.warn($defaultMsg);
@@ -6058,47 +7189,39 @@ module.exports = function generate_validate(it, $keyword, $ruleType) {
       var $schemaPath = it.schemaPath + '.type',
         $errSchemaPath = it.errSchemaPath + '/type',
         $method = $typeIsArray ? 'checkDataTypes' : 'checkDataType';
-      out += ' if (' + (it.util[$method]($typeSchema, $data, true)) + ') { ';
+      out += ' if (' + (it.util[$method]($typeSchema, $data, it.opts.strictNumbers, true)) + ') { ';
       if ($coerceToTypes) {
         var $dataType = 'dataType' + $lvl,
           $coerced = 'coerced' + $lvl;
-        out += ' var ' + ($dataType) + ' = typeof ' + ($data) + '; ';
+        out += ' var ' + ($dataType) + ' = typeof ' + ($data) + '; var ' + ($coerced) + ' = undefined; ';
         if (it.opts.coerceTypes == 'array') {
-          out += ' if (' + ($dataType) + ' == \'object\' && Array.isArray(' + ($data) + ')) ' + ($dataType) + ' = \'array\'; ';
+          out += ' if (' + ($dataType) + ' == \'object\' && Array.isArray(' + ($data) + ') && ' + ($data) + '.length == 1) { ' + ($data) + ' = ' + ($data) + '[0]; ' + ($dataType) + ' = typeof ' + ($data) + '; if (' + (it.util.checkDataType(it.schema.type, $data, it.opts.strictNumbers)) + ') ' + ($coerced) + ' = ' + ($data) + '; } ';
         }
-        out += ' var ' + ($coerced) + ' = undefined; ';
-        var $bracesCoercion = '';
+        out += ' if (' + ($coerced) + ' !== undefined) ; ';
         var arr1 = $coerceToTypes;
         if (arr1) {
           var $type, $i = -1,
             l1 = arr1.length - 1;
           while ($i < l1) {
             $type = arr1[$i += 1];
-            if ($i) {
-              out += ' if (' + ($coerced) + ' === undefined) { ';
-              $bracesCoercion += '}';
-            }
-            if (it.opts.coerceTypes == 'array' && $type != 'array') {
-              out += ' if (' + ($dataType) + ' == \'array\' && ' + ($data) + '.length == 1) { ' + ($coerced) + ' = ' + ($data) + ' = ' + ($data) + '[0]; ' + ($dataType) + ' = typeof ' + ($data) + ';  } ';
-            }
             if ($type == 'string') {
-              out += ' if (' + ($dataType) + ' == \'number\' || ' + ($dataType) + ' == \'boolean\') ' + ($coerced) + ' = \'\' + ' + ($data) + '; else if (' + ($data) + ' === null) ' + ($coerced) + ' = \'\'; ';
+              out += ' else if (' + ($dataType) + ' == \'number\' || ' + ($dataType) + ' == \'boolean\') ' + ($coerced) + ' = \'\' + ' + ($data) + '; else if (' + ($data) + ' === null) ' + ($coerced) + ' = \'\'; ';
             } else if ($type == 'number' || $type == 'integer') {
-              out += ' if (' + ($dataType) + ' == \'boolean\' || ' + ($data) + ' === null || (' + ($dataType) + ' == \'string\' && ' + ($data) + ' && ' + ($data) + ' == +' + ($data) + ' ';
+              out += ' else if (' + ($dataType) + ' == \'boolean\' || ' + ($data) + ' === null || (' + ($dataType) + ' == \'string\' && ' + ($data) + ' && ' + ($data) + ' == +' + ($data) + ' ';
               if ($type == 'integer') {
                 out += ' && !(' + ($data) + ' % 1)';
               }
               out += ')) ' + ($coerced) + ' = +' + ($data) + '; ';
             } else if ($type == 'boolean') {
-              out += ' if (' + ($data) + ' === \'false\' || ' + ($data) + ' === 0 || ' + ($data) + ' === null) ' + ($coerced) + ' = false; else if (' + ($data) + ' === \'true\' || ' + ($data) + ' === 1) ' + ($coerced) + ' = true; ';
+              out += ' else if (' + ($data) + ' === \'false\' || ' + ($data) + ' === 0 || ' + ($data) + ' === null) ' + ($coerced) + ' = false; else if (' + ($data) + ' === \'true\' || ' + ($data) + ' === 1) ' + ($coerced) + ' = true; ';
             } else if ($type == 'null') {
-              out += ' if (' + ($data) + ' === \'\' || ' + ($data) + ' === 0 || ' + ($data) + ' === false) ' + ($coerced) + ' = null; ';
+              out += ' else if (' + ($data) + ' === \'\' || ' + ($data) + ' === 0 || ' + ($data) + ' === false) ' + ($coerced) + ' = null; ';
             } else if (it.opts.coerceTypes == 'array' && $type == 'array') {
-              out += ' if (' + ($dataType) + ' == \'string\' || ' + ($dataType) + ' == \'number\' || ' + ($dataType) + ' == \'boolean\' || ' + ($data) + ' == null) ' + ($coerced) + ' = [' + ($data) + ']; ';
+              out += ' else if (' + ($dataType) + ' == \'string\' || ' + ($dataType) + ' == \'number\' || ' + ($dataType) + ' == \'boolean\' || ' + ($data) + ' == null) ' + ($coerced) + ' = [' + ($data) + ']; ';
             }
           }
         }
-        out += ' ' + ($bracesCoercion) + ' if (' + ($coerced) + ' === undefined) {   ';
+        out += ' else {   ';
         var $$outStack = $$outStack || [];
         $$outStack.push(out);
         out = ''; /* istanbul ignore else */
@@ -6138,7 +7261,7 @@ module.exports = function generate_validate(it, $keyword, $ruleType) {
         } else {
           out += ' var err = ' + (__err) + ';  if (vErrors === null) vErrors = [err]; else vErrors.push(err); errors++; ';
         }
-        out += ' } else {  ';
+        out += ' } if (' + ($coerced) + ' !== undefined) {  ';
         var $parentData = $dataLvl ? 'data' + (($dataLvl - 1) || '') : 'parentData',
           $parentDataProperty = $dataLvl ? it.dataPathArr[$dataLvl] : 'parentDataProperty';
         out += ' ' + ($data) + ' = ' + ($coerced) + '; ';
@@ -6211,7 +7334,7 @@ module.exports = function generate_validate(it, $keyword, $ruleType) {
         $rulesGroup = arr2[i2 += 1];
         if ($shouldUseGroup($rulesGroup)) {
           if ($rulesGroup.type) {
-            out += ' if (' + (it.util.checkDataType($rulesGroup.type, $data)) + ') { ';
+            out += ' if (' + (it.util.checkDataType($rulesGroup.type, $data, it.opts.strictNumbers)) + ') { ';
           }
           if (it.opts.useDefaults) {
             if ($rulesGroup.type == 'object' && it.schema.properties) {
@@ -6379,10 +7502,6 @@ module.exports = function generate_validate(it, $keyword, $ruleType) {
   } else {
     out += ' var ' + ($valid) + ' = errors === errs_' + ($lvl) + ';';
   }
-  out = it.util.cleanUpCode(out);
-  if ($top) {
-    out = it.util.finalCleanUpCode(out, $async);
-  }
 
   function $shouldUseGroup($rulesGroup) {
     var rules = $rulesGroup.rules;
@@ -6457,7 +7576,7 @@ function addKeyword(keyword, definition) {
         metaSchema = {
           anyOf: [
             metaSchema,
-            { '$ref': 'https://raw.githubusercontent.com/epoberezkin/ajv/master/lib/refs/data.json#' }
+            { '$ref': 'https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#' }
           ]
         };
       }
@@ -6762,6 +7881,31 @@ var enhanceError = __webpack_require__(1516);
 
 var isHttps = /https:?/;
 
+/**
+ *
+ * @param {http.ClientRequestArgs} options
+ * @param {AxiosProxyConfig} proxy
+ * @param {string} location
+ */
+function setProxy(options, proxy, location) {
+  options.hostname = proxy.host;
+  options.host = proxy.host;
+  options.port = proxy.port;
+  options.path = location;
+
+  // Basic proxy authorization
+  if (proxy.auth) {
+    var base64 = Buffer.from(proxy.auth.username + ':' + proxy.auth.password, 'utf8').toString('base64');
+    options.headers['Proxy-Authorization'] = 'Basic ' + base64;
+  }
+
+  // If a proxy is used, any redirects must also pass through the proxy
+  options.beforeRedirect = function beforeRedirect(redirection) {
+    redirection.headers.host = redirection.host;
+    setProxy(redirection, proxy, redirection.href);
+  };
+}
+
 /*eslint consistent-return:0*/
 module.exports = function httpAdapter(config) {
   return new Promise(function dispatchHttpRequest(resolvePromise, rejectPromise) {
@@ -6872,11 +8016,11 @@ module.exports = function httpAdapter(config) {
           });
         }
 
-
         if (shouldProxy) {
           proxy = {
             host: parsedProxyUrl.hostname,
-            port: parsedProxyUrl.port
+            port: parsedProxyUrl.port,
+            protocol: parsedProxyUrl.protocol
           };
 
           if (parsedProxyUrl.auth) {
@@ -6891,17 +8035,8 @@ module.exports = function httpAdapter(config) {
     }
 
     if (proxy) {
-      options.hostname = proxy.host;
-      options.host = proxy.host;
       options.headers.host = parsed.hostname + (parsed.port ? ':' + parsed.port : '');
-      options.port = proxy.port;
-      options.path = protocol + '//' + parsed.hostname + (parsed.port ? ':' + parsed.port : '') + options.path;
-
-      // Basic proxy authorization
-      if (proxy.auth) {
-        var base64 = Buffer.from(proxy.auth.username + ':' + proxy.auth.password, 'utf8').toString('base64');
-        options.headers['Proxy-Authorization'] = 'Basic ' + base64;
-      }
+      setProxy(options, proxy, protocol + '//' + parsed.hostname + (parsed.port ? ':' + parsed.port : '') + options.path);
     }
 
     var transport;
@@ -7059,19 +8194,12 @@ module.exports = function xhrAdapter(config) {
       delete requestHeaders['Content-Type']; // Let the browser set it
     }
 
-    if (
-      (utils.isBlob(requestData) || utils.isFile(requestData)) &&
-      requestData.type
-    ) {
-      delete requestHeaders['Content-Type']; // Let the browser set it
-    }
-
     var request = new XMLHttpRequest();
 
     // HTTP basic authentication
     if (config.auth) {
       var username = config.auth.username || '';
-      var password = unescape(encodeURIComponent(config.auth.password)) || '';
+      var password = config.auth.password ? unescape(encodeURIComponent(config.auth.password)) : '';
       requestHeaders.Authorization = 'Basic ' + btoa(username + ':' + password);
     }
 
@@ -7282,6 +8410,9 @@ axios.all = function all(promises) {
 };
 axios.spread = __webpack_require__(4850);
 
+// Expose isAxiosError
+axios.isAxiosError = __webpack_require__(650);
+
 module.exports = axios;
 
 // Allow use of default import syntax in TypeScript
@@ -7476,7 +8607,8 @@ utils.forEach(['delete', 'get', 'head', 'options'], function forEachMethodNoData
   Axios.prototype[method] = function(url, config) {
     return this.request(mergeConfig(config || {}, {
       method: method,
-      url: url
+      url: url,
+      data: (config || {}).data
     }));
   };
 });
@@ -8212,6 +9344,25 @@ module.exports = function isAbsoluteURL(url) {
 
 /***/ }),
 
+/***/ 650:
+/***/ ((module) => {
+
+"use strict";
+
+
+/**
+ * Determines whether the payload is an error thrown by Axios
+ *
+ * @param {*} payload The value to test
+ * @returns {boolean} True if the payload is an error thrown by Axios, otherwise false
+ */
+module.exports = function isAxiosError(payload) {
+  return (typeof payload === 'object') && (payload.isAxiosError === true);
+};
+
+
+/***/ }),
+
 /***/ 3608:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -8759,6 +9910,73 @@ module.exports = {
   trim: trim,
   stripBOM: stripBOM
 };
+
+
+/***/ }),
+
+/***/ 9417:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = balanced;
+function balanced(a, b, str) {
+  if (a instanceof RegExp) a = maybeMatch(a, str);
+  if (b instanceof RegExp) b = maybeMatch(b, str);
+
+  var r = range(a, b, str);
+
+  return r && {
+    start: r[0],
+    end: r[1],
+    pre: str.slice(0, r[0]),
+    body: str.slice(r[0] + a.length, r[1]),
+    post: str.slice(r[1] + b.length)
+  };
+}
+
+function maybeMatch(reg, str) {
+  var m = str.match(reg);
+  return m ? m[0] : null;
+}
+
+balanced.range = range;
+function range(a, b, str) {
+  var begs, beg, left, right, result;
+  var ai = str.indexOf(a);
+  var bi = str.indexOf(b, ai + 1);
+  var i = ai;
+
+  if (ai >= 0 && bi > 0) {
+    begs = [];
+    left = str.length;
+
+    while (i >= 0 && !result) {
+      if (i == ai) {
+        begs.push(i);
+        ai = str.indexOf(a, i + 1);
+      } else if (begs.length == 1) {
+        result = [ begs.pop(), bi ];
+      } else {
+        beg = begs.pop();
+        if (beg < left) {
+          left = beg;
+          right = bi;
+        }
+
+        bi = str.indexOf(b, i + 1);
+      }
+
+      i = ai < bi && ai >= 0 ? ai : bi;
+    }
+
+    if (begs.length) {
+      result = [ left, right ];
+    }
+  }
+
+  return result;
+}
 
 
 /***/ }),
@@ -10439,6 +11657,214 @@ module.exports = exports.default;
 
 /***/ }),
 
+/***/ 3717:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+var concatMap = __webpack_require__(6891);
+var balanced = __webpack_require__(9417);
+
+module.exports = expandTop;
+
+var escSlash = '\0SLASH'+Math.random()+'\0';
+var escOpen = '\0OPEN'+Math.random()+'\0';
+var escClose = '\0CLOSE'+Math.random()+'\0';
+var escComma = '\0COMMA'+Math.random()+'\0';
+var escPeriod = '\0PERIOD'+Math.random()+'\0';
+
+function numeric(str) {
+  return parseInt(str, 10) == str
+    ? parseInt(str, 10)
+    : str.charCodeAt(0);
+}
+
+function escapeBraces(str) {
+  return str.split('\\\\').join(escSlash)
+            .split('\\{').join(escOpen)
+            .split('\\}').join(escClose)
+            .split('\\,').join(escComma)
+            .split('\\.').join(escPeriod);
+}
+
+function unescapeBraces(str) {
+  return str.split(escSlash).join('\\')
+            .split(escOpen).join('{')
+            .split(escClose).join('}')
+            .split(escComma).join(',')
+            .split(escPeriod).join('.');
+}
+
+
+// Basically just str.split(","), but handling cases
+// where we have nested braced sections, which should be
+// treated as individual members, like {a,{b,c},d}
+function parseCommaParts(str) {
+  if (!str)
+    return [''];
+
+  var parts = [];
+  var m = balanced('{', '}', str);
+
+  if (!m)
+    return str.split(',');
+
+  var pre = m.pre;
+  var body = m.body;
+  var post = m.post;
+  var p = pre.split(',');
+
+  p[p.length-1] += '{' + body + '}';
+  var postParts = parseCommaParts(post);
+  if (post.length) {
+    p[p.length-1] += postParts.shift();
+    p.push.apply(p, postParts);
+  }
+
+  parts.push.apply(parts, p);
+
+  return parts;
+}
+
+function expandTop(str) {
+  if (!str)
+    return [];
+
+  // I don't know why Bash 4.3 does this, but it does.
+  // Anything starting with {} will have the first two bytes preserved
+  // but *only* at the top level, so {},a}b will not expand to anything,
+  // but a{},b}c will be expanded to [a}c,abc].
+  // One could argue that this is a bug in Bash, but since the goal of
+  // this module is to match Bash's rules, we escape a leading {}
+  if (str.substr(0, 2) === '{}') {
+    str = '\\{\\}' + str.substr(2);
+  }
+
+  return expand(escapeBraces(str), true).map(unescapeBraces);
+}
+
+function identity(e) {
+  return e;
+}
+
+function embrace(str) {
+  return '{' + str + '}';
+}
+function isPadded(el) {
+  return /^-?0\d/.test(el);
+}
+
+function lte(i, y) {
+  return i <= y;
+}
+function gte(i, y) {
+  return i >= y;
+}
+
+function expand(str, isTop) {
+  var expansions = [];
+
+  var m = balanced('{', '}', str);
+  if (!m || /\$$/.test(m.pre)) return [str];
+
+  var isNumericSequence = /^-?\d+\.\.-?\d+(?:\.\.-?\d+)?$/.test(m.body);
+  var isAlphaSequence = /^[a-zA-Z]\.\.[a-zA-Z](?:\.\.-?\d+)?$/.test(m.body);
+  var isSequence = isNumericSequence || isAlphaSequence;
+  var isOptions = m.body.indexOf(',') >= 0;
+  if (!isSequence && !isOptions) {
+    // {a},b}
+    if (m.post.match(/,.*\}/)) {
+      str = m.pre + '{' + m.body + escClose + m.post;
+      return expand(str);
+    }
+    return [str];
+  }
+
+  var n;
+  if (isSequence) {
+    n = m.body.split(/\.\./);
+  } else {
+    n = parseCommaParts(m.body);
+    if (n.length === 1) {
+      // x{{a,b}}y ==> x{a}y x{b}y
+      n = expand(n[0], false).map(embrace);
+      if (n.length === 1) {
+        var post = m.post.length
+          ? expand(m.post, false)
+          : [''];
+        return post.map(function(p) {
+          return m.pre + n[0] + p;
+        });
+      }
+    }
+  }
+
+  // at this point, n is the parts, and we know it's not a comma set
+  // with a single entry.
+
+  // no need to expand pre, since it is guaranteed to be free of brace-sets
+  var pre = m.pre;
+  var post = m.post.length
+    ? expand(m.post, false)
+    : [''];
+
+  var N;
+
+  if (isSequence) {
+    var x = numeric(n[0]);
+    var y = numeric(n[1]);
+    var width = Math.max(n[0].length, n[1].length)
+    var incr = n.length == 3
+      ? Math.abs(numeric(n[2]))
+      : 1;
+    var test = lte;
+    var reverse = y < x;
+    if (reverse) {
+      incr *= -1;
+      test = gte;
+    }
+    var pad = n.some(isPadded);
+
+    N = [];
+
+    for (var i = x; test(i, y); i += incr) {
+      var c;
+      if (isAlphaSequence) {
+        c = String.fromCharCode(i);
+        if (c === '\\')
+          c = '';
+      } else {
+        c = String(i);
+        if (pad) {
+          var need = width - c.length;
+          if (need > 0) {
+            var z = new Array(need + 1).join('0');
+            if (i < 0)
+              c = '-' + z + c.slice(1);
+            else
+              c = z + c;
+          }
+        }
+      }
+      N.push(c);
+    }
+  } else {
+    N = concatMap(n, function(el) { return expand(el, false) });
+  }
+
+  for (var j = 0; j < N.length; j++) {
+    for (var k = 0; k < post.length; k++) {
+      var expansion = pre + N[j] + post[k];
+      if (!isTop || isSequence || expansion)
+        expansions.push(expansion);
+    }
+  }
+
+  return expansions;
+}
+
+
+
+/***/ }),
+
 /***/ 1779:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
@@ -12030,6 +13456,26 @@ module.exports = {
 	"whitesmoke": [245, 245, 245],
 	"yellow": [255, 255, 0],
 	"yellowgreen": [154, 205, 50]
+};
+
+
+/***/ }),
+
+/***/ 6891:
+/***/ ((module) => {
+
+module.exports = function (xs, fn) {
+    var res = [];
+    for (var i = 0; i < xs.length; i++) {
+        var x = fn(xs[i], i);
+        if (isArray(x)) res.push.apply(res, x);
+        else res.push(x);
+    }
+    return res;
+};
+
+var isArray = Array.isArray || function (xs) {
+    return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
 
@@ -16419,21 +17865,18 @@ module.exports = function (str) {
 "use strict";
 
 
-var isArray = Array.isArray;
-var keyList = Object.keys;
-var hasProp = Object.prototype.hasOwnProperty;
+// do not edit .js files directly - edit src/index.jst
+
+
 
 module.exports = function equal(a, b) {
   if (a === b) return true;
 
   if (a && b && typeof a == 'object' && typeof b == 'object') {
-    var arrA = isArray(a)
-      , arrB = isArray(b)
-      , i
-      , length
-      , key;
+    if (a.constructor !== b.constructor) return false;
 
-    if (arrA && arrB) {
+    var length, i, keys;
+    if (Array.isArray(a)) {
       length = a.length;
       if (length != b.length) return false;
       for (i = length; i-- !== 0;)
@@ -16441,35 +17884,29 @@ module.exports = function equal(a, b) {
       return true;
     }
 
-    if (arrA != arrB) return false;
 
-    var dateA = a instanceof Date
-      , dateB = b instanceof Date;
-    if (dateA != dateB) return false;
-    if (dateA && dateB) return a.getTime() == b.getTime();
 
-    var regexpA = a instanceof RegExp
-      , regexpB = b instanceof RegExp;
-    if (regexpA != regexpB) return false;
-    if (regexpA && regexpB) return a.toString() == b.toString();
+    if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+    if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+    if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
 
-    var keys = keyList(a);
+    keys = Object.keys(a);
     length = keys.length;
-
-    if (length !== keyList(b).length)
-      return false;
+    if (length !== Object.keys(b).length) return false;
 
     for (i = length; i-- !== 0;)
-      if (!hasProp.call(b, keys[i])) return false;
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
 
     for (i = length; i-- !== 0;) {
-      key = keys[i];
+      var key = keys[i];
+
       if (!equal(a[key], b[key])) return false;
     }
 
     return true;
   }
 
+  // true if both NaN, false otherwise
   return a!==a && b!==b;
 };
 
@@ -16964,7 +18401,7 @@ function wrap(protocols) {
     var wrappedProtocol = exports[scheme] = Object.create(nativeProtocol);
 
     // Executes a request, following redirects
-    wrappedProtocol.request = function (input, options, callback) {
+    function request(input, options, callback) {
       // Parse parameters
       if (typeof input === "string") {
         var urlStr = input;
@@ -16999,14 +18436,20 @@ function wrap(protocols) {
       assert.equal(options.protocol, protocol, "protocol mismatch");
       debug("options", options);
       return new RedirectableRequest(options, callback);
-    };
+    }
 
     // Executes a GET request, following redirects
-    wrappedProtocol.get = function (input, options, callback) {
-      var request = wrappedProtocol.request(input, options, callback);
-      request.end();
-      return request;
-    };
+    function get(input, options, callback) {
+      var wrappedRequest = wrappedProtocol.request(input, options, callback);
+      wrappedRequest.end();
+      return wrappedRequest;
+    }
+
+    // Expose the properties on the wrapped protocol
+    Object.defineProperties(wrappedProtocol, {
+      request: { value: request, configurable: true, enumerable: true, writable: true },
+      get: { value: get, configurable: true, enumerable: true, writable: true },
+    });
   });
   return exports;
 }
@@ -20147,6 +21590,936 @@ module.exports.default = leven;
 
 /***/ }),
 
+/***/ 3973:
+/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
+
+module.exports = minimatch
+minimatch.Minimatch = Minimatch
+
+var path = { sep: '/' }
+try {
+  path = __webpack_require__(5622)
+} catch (er) {}
+
+var GLOBSTAR = minimatch.GLOBSTAR = Minimatch.GLOBSTAR = {}
+var expand = __webpack_require__(3717)
+
+var plTypes = {
+  '!': { open: '(?:(?!(?:', close: '))[^/]*?)'},
+  '?': { open: '(?:', close: ')?' },
+  '+': { open: '(?:', close: ')+' },
+  '*': { open: '(?:', close: ')*' },
+  '@': { open: '(?:', close: ')' }
+}
+
+// any single thing other than /
+// don't need to escape / when using new RegExp()
+var qmark = '[^/]'
+
+// * => any number of characters
+var star = qmark + '*?'
+
+// ** when dots are allowed.  Anything goes, except .. and .
+// not (^ or / followed by one or two dots followed by $ or /),
+// followed by anything, any number of times.
+var twoStarDot = '(?:(?!(?:\\\/|^)(?:\\.{1,2})($|\\\/)).)*?'
+
+// not a ^ or / followed by a dot,
+// followed by anything, any number of times.
+var twoStarNoDot = '(?:(?!(?:\\\/|^)\\.).)*?'
+
+// characters that need to be escaped in RegExp.
+var reSpecials = charSet('().*{}+?[]^$\\!')
+
+// "abc" -> { a:true, b:true, c:true }
+function charSet (s) {
+  return s.split('').reduce(function (set, c) {
+    set[c] = true
+    return set
+  }, {})
+}
+
+// normalizes slashes.
+var slashSplit = /\/+/
+
+minimatch.filter = filter
+function filter (pattern, options) {
+  options = options || {}
+  return function (p, i, list) {
+    return minimatch(p, pattern, options)
+  }
+}
+
+function ext (a, b) {
+  a = a || {}
+  b = b || {}
+  var t = {}
+  Object.keys(b).forEach(function (k) {
+    t[k] = b[k]
+  })
+  Object.keys(a).forEach(function (k) {
+    t[k] = a[k]
+  })
+  return t
+}
+
+minimatch.defaults = function (def) {
+  if (!def || !Object.keys(def).length) return minimatch
+
+  var orig = minimatch
+
+  var m = function minimatch (p, pattern, options) {
+    return orig.minimatch(p, pattern, ext(def, options))
+  }
+
+  m.Minimatch = function Minimatch (pattern, options) {
+    return new orig.Minimatch(pattern, ext(def, options))
+  }
+
+  return m
+}
+
+Minimatch.defaults = function (def) {
+  if (!def || !Object.keys(def).length) return Minimatch
+  return minimatch.defaults(def).Minimatch
+}
+
+function minimatch (p, pattern, options) {
+  if (typeof pattern !== 'string') {
+    throw new TypeError('glob pattern string required')
+  }
+
+  if (!options) options = {}
+
+  // shortcut: comments match nothing.
+  if (!options.nocomment && pattern.charAt(0) === '#') {
+    return false
+  }
+
+  // "" only matches ""
+  if (pattern.trim() === '') return p === ''
+
+  return new Minimatch(pattern, options).match(p)
+}
+
+function Minimatch (pattern, options) {
+  if (!(this instanceof Minimatch)) {
+    return new Minimatch(pattern, options)
+  }
+
+  if (typeof pattern !== 'string') {
+    throw new TypeError('glob pattern string required')
+  }
+
+  if (!options) options = {}
+  pattern = pattern.trim()
+
+  // windows support: need to use /, not \
+  if (path.sep !== '/') {
+    pattern = pattern.split(path.sep).join('/')
+  }
+
+  this.options = options
+  this.set = []
+  this.pattern = pattern
+  this.regexp = null
+  this.negate = false
+  this.comment = false
+  this.empty = false
+
+  // make the set of regexps etc.
+  this.make()
+}
+
+Minimatch.prototype.debug = function () {}
+
+Minimatch.prototype.make = make
+function make () {
+  // don't do it more than once.
+  if (this._made) return
+
+  var pattern = this.pattern
+  var options = this.options
+
+  // empty patterns and comments match nothing.
+  if (!options.nocomment && pattern.charAt(0) === '#') {
+    this.comment = true
+    return
+  }
+  if (!pattern) {
+    this.empty = true
+    return
+  }
+
+  // step 1: figure out negation, etc.
+  this.parseNegate()
+
+  // step 2: expand braces
+  var set = this.globSet = this.braceExpand()
+
+  if (options.debug) this.debug = console.error
+
+  this.debug(this.pattern, set)
+
+  // step 3: now we have a set, so turn each one into a series of path-portion
+  // matching patterns.
+  // These will be regexps, except in the case of "**", which is
+  // set to the GLOBSTAR object for globstar behavior,
+  // and will not contain any / characters
+  set = this.globParts = set.map(function (s) {
+    return s.split(slashSplit)
+  })
+
+  this.debug(this.pattern, set)
+
+  // glob --> regexps
+  set = set.map(function (s, si, set) {
+    return s.map(this.parse, this)
+  }, this)
+
+  this.debug(this.pattern, set)
+
+  // filter out everything that didn't compile properly.
+  set = set.filter(function (s) {
+    return s.indexOf(false) === -1
+  })
+
+  this.debug(this.pattern, set)
+
+  this.set = set
+}
+
+Minimatch.prototype.parseNegate = parseNegate
+function parseNegate () {
+  var pattern = this.pattern
+  var negate = false
+  var options = this.options
+  var negateOffset = 0
+
+  if (options.nonegate) return
+
+  for (var i = 0, l = pattern.length
+    ; i < l && pattern.charAt(i) === '!'
+    ; i++) {
+    negate = !negate
+    negateOffset++
+  }
+
+  if (negateOffset) this.pattern = pattern.substr(negateOffset)
+  this.negate = negate
+}
+
+// Brace expansion:
+// a{b,c}d -> abd acd
+// a{b,}c -> abc ac
+// a{0..3}d -> a0d a1d a2d a3d
+// a{b,c{d,e}f}g -> abg acdfg acefg
+// a{b,c}d{e,f}g -> abdeg acdeg abdeg abdfg
+//
+// Invalid sets are not expanded.
+// a{2..}b -> a{2..}b
+// a{b}c -> a{b}c
+minimatch.braceExpand = function (pattern, options) {
+  return braceExpand(pattern, options)
+}
+
+Minimatch.prototype.braceExpand = braceExpand
+
+function braceExpand (pattern, options) {
+  if (!options) {
+    if (this instanceof Minimatch) {
+      options = this.options
+    } else {
+      options = {}
+    }
+  }
+
+  pattern = typeof pattern === 'undefined'
+    ? this.pattern : pattern
+
+  if (typeof pattern === 'undefined') {
+    throw new TypeError('undefined pattern')
+  }
+
+  if (options.nobrace ||
+    !pattern.match(/\{.*\}/)) {
+    // shortcut. no need to expand.
+    return [pattern]
+  }
+
+  return expand(pattern)
+}
+
+// parse a component of the expanded set.
+// At this point, no pattern may contain "/" in it
+// so we're going to return a 2d array, where each entry is the full
+// pattern, split on '/', and then turned into a regular expression.
+// A regexp is made at the end which joins each array with an
+// escaped /, and another full one which joins each regexp with |.
+//
+// Following the lead of Bash 4.1, note that "**" only has special meaning
+// when it is the *only* thing in a path portion.  Otherwise, any series
+// of * is equivalent to a single *.  Globstar behavior is enabled by
+// default, and can be disabled by setting options.noglobstar.
+Minimatch.prototype.parse = parse
+var SUBPARSE = {}
+function parse (pattern, isSub) {
+  if (pattern.length > 1024 * 64) {
+    throw new TypeError('pattern is too long')
+  }
+
+  var options = this.options
+
+  // shortcuts
+  if (!options.noglobstar && pattern === '**') return GLOBSTAR
+  if (pattern === '') return ''
+
+  var re = ''
+  var hasMagic = !!options.nocase
+  var escaping = false
+  // ? => one single character
+  var patternListStack = []
+  var negativeLists = []
+  var stateChar
+  var inClass = false
+  var reClassStart = -1
+  var classStart = -1
+  // . and .. never match anything that doesn't start with .,
+  // even when options.dot is set.
+  var patternStart = pattern.charAt(0) === '.' ? '' // anything
+  // not (start or / followed by . or .. followed by / or end)
+  : options.dot ? '(?!(?:^|\\\/)\\.{1,2}(?:$|\\\/))'
+  : '(?!\\.)'
+  var self = this
+
+  function clearStateChar () {
+    if (stateChar) {
+      // we had some state-tracking character
+      // that wasn't consumed by this pass.
+      switch (stateChar) {
+        case '*':
+          re += star
+          hasMagic = true
+        break
+        case '?':
+          re += qmark
+          hasMagic = true
+        break
+        default:
+          re += '\\' + stateChar
+        break
+      }
+      self.debug('clearStateChar %j %j', stateChar, re)
+      stateChar = false
+    }
+  }
+
+  for (var i = 0, len = pattern.length, c
+    ; (i < len) && (c = pattern.charAt(i))
+    ; i++) {
+    this.debug('%s\t%s %s %j', pattern, i, re, c)
+
+    // skip over any that are escaped.
+    if (escaping && reSpecials[c]) {
+      re += '\\' + c
+      escaping = false
+      continue
+    }
+
+    switch (c) {
+      case '/':
+        // completely not allowed, even escaped.
+        // Should already be path-split by now.
+        return false
+
+      case '\\':
+        clearStateChar()
+        escaping = true
+      continue
+
+      // the various stateChar values
+      // for the "extglob" stuff.
+      case '?':
+      case '*':
+      case '+':
+      case '@':
+      case '!':
+        this.debug('%s\t%s %s %j <-- stateChar', pattern, i, re, c)
+
+        // all of those are literals inside a class, except that
+        // the glob [!a] means [^a] in regexp
+        if (inClass) {
+          this.debug('  in class')
+          if (c === '!' && i === classStart + 1) c = '^'
+          re += c
+          continue
+        }
+
+        // if we already have a stateChar, then it means
+        // that there was something like ** or +? in there.
+        // Handle the stateChar, then proceed with this one.
+        self.debug('call clearStateChar %j', stateChar)
+        clearStateChar()
+        stateChar = c
+        // if extglob is disabled, then +(asdf|foo) isn't a thing.
+        // just clear the statechar *now*, rather than even diving into
+        // the patternList stuff.
+        if (options.noext) clearStateChar()
+      continue
+
+      case '(':
+        if (inClass) {
+          re += '('
+          continue
+        }
+
+        if (!stateChar) {
+          re += '\\('
+          continue
+        }
+
+        patternListStack.push({
+          type: stateChar,
+          start: i - 1,
+          reStart: re.length,
+          open: plTypes[stateChar].open,
+          close: plTypes[stateChar].close
+        })
+        // negation is (?:(?!js)[^/]*)
+        re += stateChar === '!' ? '(?:(?!(?:' : '(?:'
+        this.debug('plType %j %j', stateChar, re)
+        stateChar = false
+      continue
+
+      case ')':
+        if (inClass || !patternListStack.length) {
+          re += '\\)'
+          continue
+        }
+
+        clearStateChar()
+        hasMagic = true
+        var pl = patternListStack.pop()
+        // negation is (?:(?!js)[^/]*)
+        // The others are (?:<pattern>)<type>
+        re += pl.close
+        if (pl.type === '!') {
+          negativeLists.push(pl)
+        }
+        pl.reEnd = re.length
+      continue
+
+      case '|':
+        if (inClass || !patternListStack.length || escaping) {
+          re += '\\|'
+          escaping = false
+          continue
+        }
+
+        clearStateChar()
+        re += '|'
+      continue
+
+      // these are mostly the same in regexp and glob
+      case '[':
+        // swallow any state-tracking char before the [
+        clearStateChar()
+
+        if (inClass) {
+          re += '\\' + c
+          continue
+        }
+
+        inClass = true
+        classStart = i
+        reClassStart = re.length
+        re += c
+      continue
+
+      case ']':
+        //  a right bracket shall lose its special
+        //  meaning and represent itself in
+        //  a bracket expression if it occurs
+        //  first in the list.  -- POSIX.2 2.8.3.2
+        if (i === classStart + 1 || !inClass) {
+          re += '\\' + c
+          escaping = false
+          continue
+        }
+
+        // handle the case where we left a class open.
+        // "[z-a]" is valid, equivalent to "\[z-a\]"
+        if (inClass) {
+          // split where the last [ was, make sure we don't have
+          // an invalid re. if so, re-walk the contents of the
+          // would-be class to re-translate any characters that
+          // were passed through as-is
+          // TODO: It would probably be faster to determine this
+          // without a try/catch and a new RegExp, but it's tricky
+          // to do safely.  For now, this is safe and works.
+          var cs = pattern.substring(classStart + 1, i)
+          try {
+            RegExp('[' + cs + ']')
+          } catch (er) {
+            // not a valid class!
+            var sp = this.parse(cs, SUBPARSE)
+            re = re.substr(0, reClassStart) + '\\[' + sp[0] + '\\]'
+            hasMagic = hasMagic || sp[1]
+            inClass = false
+            continue
+          }
+        }
+
+        // finish up the class.
+        hasMagic = true
+        inClass = false
+        re += c
+      continue
+
+      default:
+        // swallow any state char that wasn't consumed
+        clearStateChar()
+
+        if (escaping) {
+          // no need
+          escaping = false
+        } else if (reSpecials[c]
+          && !(c === '^' && inClass)) {
+          re += '\\'
+        }
+
+        re += c
+
+    } // switch
+  } // for
+
+  // handle the case where we left a class open.
+  // "[abc" is valid, equivalent to "\[abc"
+  if (inClass) {
+    // split where the last [ was, and escape it
+    // this is a huge pita.  We now have to re-walk
+    // the contents of the would-be class to re-translate
+    // any characters that were passed through as-is
+    cs = pattern.substr(classStart + 1)
+    sp = this.parse(cs, SUBPARSE)
+    re = re.substr(0, reClassStart) + '\\[' + sp[0]
+    hasMagic = hasMagic || sp[1]
+  }
+
+  // handle the case where we had a +( thing at the *end*
+  // of the pattern.
+  // each pattern list stack adds 3 chars, and we need to go through
+  // and escape any | chars that were passed through as-is for the regexp.
+  // Go through and escape them, taking care not to double-escape any
+  // | chars that were already escaped.
+  for (pl = patternListStack.pop(); pl; pl = patternListStack.pop()) {
+    var tail = re.slice(pl.reStart + pl.open.length)
+    this.debug('setting tail', re, pl)
+    // maybe some even number of \, then maybe 1 \, followed by a |
+    tail = tail.replace(/((?:\\{2}){0,64})(\\?)\|/g, function (_, $1, $2) {
+      if (!$2) {
+        // the | isn't already escaped, so escape it.
+        $2 = '\\'
+      }
+
+      // need to escape all those slashes *again*, without escaping the
+      // one that we need for escaping the | character.  As it works out,
+      // escaping an even number of slashes can be done by simply repeating
+      // it exactly after itself.  That's why this trick works.
+      //
+      // I am sorry that you have to see this.
+      return $1 + $1 + $2 + '|'
+    })
+
+    this.debug('tail=%j\n   %s', tail, tail, pl, re)
+    var t = pl.type === '*' ? star
+      : pl.type === '?' ? qmark
+      : '\\' + pl.type
+
+    hasMagic = true
+    re = re.slice(0, pl.reStart) + t + '\\(' + tail
+  }
+
+  // handle trailing things that only matter at the very end.
+  clearStateChar()
+  if (escaping) {
+    // trailing \\
+    re += '\\\\'
+  }
+
+  // only need to apply the nodot start if the re starts with
+  // something that could conceivably capture a dot
+  var addPatternStart = false
+  switch (re.charAt(0)) {
+    case '.':
+    case '[':
+    case '(': addPatternStart = true
+  }
+
+  // Hack to work around lack of negative lookbehind in JS
+  // A pattern like: *.!(x).!(y|z) needs to ensure that a name
+  // like 'a.xyz.yz' doesn't match.  So, the first negative
+  // lookahead, has to look ALL the way ahead, to the end of
+  // the pattern.
+  for (var n = negativeLists.length - 1; n > -1; n--) {
+    var nl = negativeLists[n]
+
+    var nlBefore = re.slice(0, nl.reStart)
+    var nlFirst = re.slice(nl.reStart, nl.reEnd - 8)
+    var nlLast = re.slice(nl.reEnd - 8, nl.reEnd)
+    var nlAfter = re.slice(nl.reEnd)
+
+    nlLast += nlAfter
+
+    // Handle nested stuff like *(*.js|!(*.json)), where open parens
+    // mean that we should *not* include the ) in the bit that is considered
+    // "after" the negated section.
+    var openParensBefore = nlBefore.split('(').length - 1
+    var cleanAfter = nlAfter
+    for (i = 0; i < openParensBefore; i++) {
+      cleanAfter = cleanAfter.replace(/\)[+*?]?/, '')
+    }
+    nlAfter = cleanAfter
+
+    var dollar = ''
+    if (nlAfter === '' && isSub !== SUBPARSE) {
+      dollar = '$'
+    }
+    var newRe = nlBefore + nlFirst + nlAfter + dollar + nlLast
+    re = newRe
+  }
+
+  // if the re is not "" at this point, then we need to make sure
+  // it doesn't match against an empty path part.
+  // Otherwise a/* will match a/, which it should not.
+  if (re !== '' && hasMagic) {
+    re = '(?=.)' + re
+  }
+
+  if (addPatternStart) {
+    re = patternStart + re
+  }
+
+  // parsing just a piece of a larger pattern.
+  if (isSub === SUBPARSE) {
+    return [re, hasMagic]
+  }
+
+  // skip the regexp for non-magical patterns
+  // unescape anything in it, though, so that it'll be
+  // an exact match against a file etc.
+  if (!hasMagic) {
+    return globUnescape(pattern)
+  }
+
+  var flags = options.nocase ? 'i' : ''
+  try {
+    var regExp = new RegExp('^' + re + '$', flags)
+  } catch (er) {
+    // If it was an invalid regular expression, then it can't match
+    // anything.  This trick looks for a character after the end of
+    // the string, which is of course impossible, except in multi-line
+    // mode, but it's not a /m regex.
+    return new RegExp('$.')
+  }
+
+  regExp._glob = pattern
+  regExp._src = re
+
+  return regExp
+}
+
+minimatch.makeRe = function (pattern, options) {
+  return new Minimatch(pattern, options || {}).makeRe()
+}
+
+Minimatch.prototype.makeRe = makeRe
+function makeRe () {
+  if (this.regexp || this.regexp === false) return this.regexp
+
+  // at this point, this.set is a 2d array of partial
+  // pattern strings, or "**".
+  //
+  // It's better to use .match().  This function shouldn't
+  // be used, really, but it's pretty convenient sometimes,
+  // when you just want to work with a regex.
+  var set = this.set
+
+  if (!set.length) {
+    this.regexp = false
+    return this.regexp
+  }
+  var options = this.options
+
+  var twoStar = options.noglobstar ? star
+    : options.dot ? twoStarDot
+    : twoStarNoDot
+  var flags = options.nocase ? 'i' : ''
+
+  var re = set.map(function (pattern) {
+    return pattern.map(function (p) {
+      return (p === GLOBSTAR) ? twoStar
+      : (typeof p === 'string') ? regExpEscape(p)
+      : p._src
+    }).join('\\\/')
+  }).join('|')
+
+  // must match entire pattern
+  // ending in a * or ** will make it less strict.
+  re = '^(?:' + re + ')$'
+
+  // can match anything, as long as it's not this.
+  if (this.negate) re = '^(?!' + re + ').*$'
+
+  try {
+    this.regexp = new RegExp(re, flags)
+  } catch (ex) {
+    this.regexp = false
+  }
+  return this.regexp
+}
+
+minimatch.match = function (list, pattern, options) {
+  options = options || {}
+  var mm = new Minimatch(pattern, options)
+  list = list.filter(function (f) {
+    return mm.match(f)
+  })
+  if (mm.options.nonull && !list.length) {
+    list.push(pattern)
+  }
+  return list
+}
+
+Minimatch.prototype.match = match
+function match (f, partial) {
+  this.debug('match', f, this.pattern)
+  // short-circuit in the case of busted things.
+  // comments, etc.
+  if (this.comment) return false
+  if (this.empty) return f === ''
+
+  if (f === '/' && partial) return true
+
+  var options = this.options
+
+  // windows: need to use /, not \
+  if (path.sep !== '/') {
+    f = f.split(path.sep).join('/')
+  }
+
+  // treat the test path as a set of pathparts.
+  f = f.split(slashSplit)
+  this.debug(this.pattern, 'split', f)
+
+  // just ONE of the pattern sets in this.set needs to match
+  // in order for it to be valid.  If negating, then just one
+  // match means that we have failed.
+  // Either way, return on the first hit.
+
+  var set = this.set
+  this.debug(this.pattern, 'set', set)
+
+  // Find the basename of the path by looking for the last non-empty segment
+  var filename
+  var i
+  for (i = f.length - 1; i >= 0; i--) {
+    filename = f[i]
+    if (filename) break
+  }
+
+  for (i = 0; i < set.length; i++) {
+    var pattern = set[i]
+    var file = f
+    if (options.matchBase && pattern.length === 1) {
+      file = [filename]
+    }
+    var hit = this.matchOne(file, pattern, partial)
+    if (hit) {
+      if (options.flipNegate) return true
+      return !this.negate
+    }
+  }
+
+  // didn't get any hits.  this is success if it's a negative
+  // pattern, failure otherwise.
+  if (options.flipNegate) return false
+  return this.negate
+}
+
+// set partial to true to test if, for example,
+// "/a/b" matches the start of "/*/b/*/d"
+// Partial means, if you run out of file before you run
+// out of pattern, then that's fine, as long as all
+// the parts match.
+Minimatch.prototype.matchOne = function (file, pattern, partial) {
+  var options = this.options
+
+  this.debug('matchOne',
+    { 'this': this, file: file, pattern: pattern })
+
+  this.debug('matchOne', file.length, pattern.length)
+
+  for (var fi = 0,
+      pi = 0,
+      fl = file.length,
+      pl = pattern.length
+      ; (fi < fl) && (pi < pl)
+      ; fi++, pi++) {
+    this.debug('matchOne loop')
+    var p = pattern[pi]
+    var f = file[fi]
+
+    this.debug(pattern, p, f)
+
+    // should be impossible.
+    // some invalid regexp stuff in the set.
+    if (p === false) return false
+
+    if (p === GLOBSTAR) {
+      this.debug('GLOBSTAR', [pattern, p, f])
+
+      // "**"
+      // a/**/b/**/c would match the following:
+      // a/b/x/y/z/c
+      // a/x/y/z/b/c
+      // a/b/x/b/x/c
+      // a/b/c
+      // To do this, take the rest of the pattern after
+      // the **, and see if it would match the file remainder.
+      // If so, return success.
+      // If not, the ** "swallows" a segment, and try again.
+      // This is recursively awful.
+      //
+      // a/**/b/**/c matching a/b/x/y/z/c
+      // - a matches a
+      // - doublestar
+      //   - matchOne(b/x/y/z/c, b/**/c)
+      //     - b matches b
+      //     - doublestar
+      //       - matchOne(x/y/z/c, c) -> no
+      //       - matchOne(y/z/c, c) -> no
+      //       - matchOne(z/c, c) -> no
+      //       - matchOne(c, c) yes, hit
+      var fr = fi
+      var pr = pi + 1
+      if (pr === pl) {
+        this.debug('** at the end')
+        // a ** at the end will just swallow the rest.
+        // We have found a match.
+        // however, it will not swallow /.x, unless
+        // options.dot is set.
+        // . and .. are *never* matched by **, for explosively
+        // exponential reasons.
+        for (; fi < fl; fi++) {
+          if (file[fi] === '.' || file[fi] === '..' ||
+            (!options.dot && file[fi].charAt(0) === '.')) return false
+        }
+        return true
+      }
+
+      // ok, let's see if we can swallow whatever we can.
+      while (fr < fl) {
+        var swallowee = file[fr]
+
+        this.debug('\nglobstar while', file, fr, pattern, pr, swallowee)
+
+        // XXX remove this slice.  Just pass the start index.
+        if (this.matchOne(file.slice(fr), pattern.slice(pr), partial)) {
+          this.debug('globstar found match!', fr, fl, swallowee)
+          // found a match.
+          return true
+        } else {
+          // can't swallow "." or ".." ever.
+          // can only swallow ".foo" when explicitly asked.
+          if (swallowee === '.' || swallowee === '..' ||
+            (!options.dot && swallowee.charAt(0) === '.')) {
+            this.debug('dot detected!', file, fr, pattern, pr)
+            break
+          }
+
+          // ** swallows a segment, and continue.
+          this.debug('globstar swallow a segment, and continue')
+          fr++
+        }
+      }
+
+      // no match was found.
+      // However, in partial mode, we can't say this is necessarily over.
+      // If there's more *pattern* left, then
+      if (partial) {
+        // ran out of file
+        this.debug('\n>>> no match, partial?', file, fr, pattern, pr)
+        if (fr === fl) return true
+      }
+      return false
+    }
+
+    // something other than **
+    // non-magic patterns just have to match exactly
+    // patterns with magic have been turned into regexps.
+    var hit
+    if (typeof p === 'string') {
+      if (options.nocase) {
+        hit = f.toLowerCase() === p.toLowerCase()
+      } else {
+        hit = f === p
+      }
+      this.debug('string match', p, f, hit)
+    } else {
+      hit = f.match(p)
+      this.debug('pattern match', p, f, hit)
+    }
+
+    if (!hit) return false
+  }
+
+  // Note: ending in / means that we'll get a final ""
+  // at the end of the pattern.  This can only match a
+  // corresponding "" at the end of the file.
+  // If the file ends in /, then it can only match a
+  // a pattern that ends in /, unless the pattern just
+  // doesn't have any more for it. But, a/b/ should *not*
+  // match "a/b/*", even though "" matches against the
+  // [^/]*? pattern, except in partial mode, where it might
+  // simply not be reached yet.
+  // However, a/b/ should still satisfy a/*
+
+  // now either we fell off the end of the pattern, or we're done.
+  if (fi === fl && pi === pl) {
+    // ran out of pattern and filename at the same time.
+    // an exact hit!
+    return true
+  } else if (fi === fl) {
+    // ran out of file, but still had pattern left.
+    // this is ok if we're doing the match as part of
+    // a glob fs traversal.
+    return partial
+  } else if (pi === pl) {
+    // ran out of pattern, still have file left.
+    // this is only acceptable if we're on the very last
+    // empty segment of a file with a trailing slash.
+    // a/* should match a/b/
+    var emptyFileEnd = (fi === fl - 1) && (file[fi] === '')
+    return emptyFileEnd
+  }
+
+  // should be unreachable.
+  throw new Error('wtf?')
+}
+
+// replace stuff like \* with *
+function globUnescape (s) {
+  return s.replace(/\\(.)/g, '$1')
+}
+
+function regExpEscape (s) {
+  return s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')
+}
+
+
+/***/ }),
+
 /***/ 900:
 /***/ ((module) => {
 
@@ -20448,7 +22821,7 @@ module.exports = {
 /***/ 20:
 /***/ (function(__unused_webpack_module, exports) {
 
-/** @license URI.js v4.2.1 (c) 2011 Gary Court. License: http://github.com/garycourt/uri-js */
+/** @license URI.js v4.4.1 (c) 2011 Gary Court. License: http://github.com/garycourt/uri-js */
 (function (global, factory) {
 	 true ? factory(exports) :
 	0;
@@ -21410,9 +23783,9 @@ function _recomposeAuthority(components, options) {
             return "[" + $1 + ($2 ? "%25" + $2 : "") + "]";
         }));
     }
-    if (typeof components.port === "number") {
+    if (typeof components.port === "number" || typeof components.port === "string") {
         uriTokens.push(":");
-        uriTokens.push(components.port.toString(10));
+        uriTokens.push(String(components.port));
     }
     return uriTokens.length ? uriTokens.join("") : undefined;
 }
@@ -21615,8 +23988,9 @@ var handler = {
         return components;
     },
     serialize: function serialize(components, options) {
+        var secure = String(components.scheme).toLowerCase() === "https";
         //normalize the default port
-        if (components.port === (String(components.scheme).toLowerCase() !== "https" ? 80 : 443) || components.port === "") {
+        if (components.port === (secure ? 443 : 80) || components.port === "") {
             components.port = undefined;
         }
         //normalize the empty path
@@ -21635,6 +24009,57 @@ var handler$1 = {
     domainHost: handler.domainHost,
     parse: handler.parse,
     serialize: handler.serialize
+};
+
+function isSecure(wsComponents) {
+    return typeof wsComponents.secure === 'boolean' ? wsComponents.secure : String(wsComponents.scheme).toLowerCase() === "wss";
+}
+//RFC 6455
+var handler$2 = {
+    scheme: "ws",
+    domainHost: true,
+    parse: function parse(components, options) {
+        var wsComponents = components;
+        //indicate if the secure flag is set
+        wsComponents.secure = isSecure(wsComponents);
+        //construct resouce name
+        wsComponents.resourceName = (wsComponents.path || '/') + (wsComponents.query ? '?' + wsComponents.query : '');
+        wsComponents.path = undefined;
+        wsComponents.query = undefined;
+        return wsComponents;
+    },
+    serialize: function serialize(wsComponents, options) {
+        //normalize the default port
+        if (wsComponents.port === (isSecure(wsComponents) ? 443 : 80) || wsComponents.port === "") {
+            wsComponents.port = undefined;
+        }
+        //ensure scheme matches secure flag
+        if (typeof wsComponents.secure === 'boolean') {
+            wsComponents.scheme = wsComponents.secure ? 'wss' : 'ws';
+            wsComponents.secure = undefined;
+        }
+        //reconstruct path from resource name
+        if (wsComponents.resourceName) {
+            var _wsComponents$resourc = wsComponents.resourceName.split('?'),
+                _wsComponents$resourc2 = slicedToArray(_wsComponents$resourc, 2),
+                path = _wsComponents$resourc2[0],
+                query = _wsComponents$resourc2[1];
+
+            wsComponents.path = path && path !== '/' ? path : undefined;
+            wsComponents.query = query;
+            wsComponents.resourceName = undefined;
+        }
+        //forbid fragment component
+        wsComponents.fragment = undefined;
+        return wsComponents;
+    }
+};
+
+var handler$3 = {
+    scheme: "wss",
+    domainHost: handler$2.domainHost,
+    parse: handler$2.parse,
+    serialize: handler$2.serialize
 };
 
 var O = {};
@@ -21667,7 +24092,7 @@ function decodeUnreserved(str) {
     var decStr = pctDecChars(str);
     return !decStr.match(UNRESERVED) ? str : decStr;
 }
-var handler$2 = {
+var handler$4 = {
     scheme: "mailto",
     parse: function parse$$1(components, options) {
         var mailtoComponents = components;
@@ -21755,7 +24180,7 @@ var handler$2 = {
 
 var URN_PARSE = /^([^\:]+)\:(.*)/;
 //RFC 2141
-var handler$3 = {
+var handler$5 = {
     scheme: "urn",
     parse: function parse$$1(components, options) {
         var matches = components.path && components.path.match(URN_PARSE);
@@ -21794,7 +24219,7 @@ var handler$3 = {
 
 var UUID = /^[0-9A-Fa-f]{8}(?:\-[0-9A-Fa-f]{4}){3}\-[0-9A-Fa-f]{12}$/;
 //RFC 4122
-var handler$4 = {
+var handler$6 = {
     scheme: "urn:uuid",
     parse: function parse(urnComponents, options) {
         var uuidComponents = urnComponents;
@@ -21818,6 +24243,8 @@ SCHEMES[handler$1.scheme] = handler$1;
 SCHEMES[handler$2.scheme] = handler$2;
 SCHEMES[handler$3.scheme] = handler$3;
 SCHEMES[handler$4.scheme] = handler$4;
+SCHEMES[handler$5.scheme] = handler$5;
+SCHEMES[handler$6.scheme] = handler$6;
 
 exports.SCHEMES = SCHEMES;
 exports.pctEncChar = pctEncChar;
@@ -21844,7 +24271,7 @@ Object.defineProperty(exports, '__esModule', { value: true });
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"https://raw.githubusercontent.com/epoberezkin/ajv/master/lib/refs/data.json#\",\"description\":\"Meta-schema for $data reference (JSON Schema extension proposal)\",\"type\":\"object\",\"required\":[\"$data\"],\"properties\":{\"$data\":{\"type\":\"string\",\"anyOf\":[{\"format\":\"relative-json-pointer\"},{\"format\":\"json-pointer\"}]}},\"additionalProperties\":false}");
+module.exports = JSON.parse("{\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"$id\":\"https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#\",\"description\":\"Meta-schema for $data reference (JSON Schema extension proposal)\",\"type\":\"object\",\"required\":[\"$data\"],\"properties\":{\"$data\":{\"type\":\"string\",\"anyOf\":[{\"format\":\"relative-json-pointer\"},{\"format\":\"json-pointer\"}]}},\"additionalProperties\":false}");
 
 /***/ }),
 
@@ -21860,7 +24287,7 @@ module.exports = JSON.parse("{\"$schema\":\"http://json-schema.org/draft-07/sche
 /***/ ((module) => {
 
 "use strict";
-module.exports = JSON.parse("{\"_from\":\"axios\",\"_id\":\"axios@0.20.0\",\"_inBundle\":false,\"_integrity\":\"sha512-ANA4rr2BDcmmAQLOKft2fufrtuvlqR+cXNNinUmvfeSNCOF98PZL+7M/v1zIdGo7OLjEA9J2gXJL+j4zGsl0bA==\",\"_location\":\"/axios\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"tag\",\"registry\":true,\"raw\":\"axios\",\"name\":\"axios\",\"escapedName\":\"axios\",\"rawSpec\":\"\",\"saveSpec\":null,\"fetchSpec\":\"latest\"},\"_requiredBy\":[\"#USER\",\"/\"],\"_resolved\":\"https://registry.npmjs.org/axios/-/axios-0.20.0.tgz\",\"_shasum\":\"057ba30f04884694993a8cd07fa394cff11c50bd\",\"_spec\":\"axios\",\"_where\":\"D:\\\\Git\\\\validate-json-action\",\"author\":{\"name\":\"Matt Zabriskie\"},\"browser\":{\"./lib/adapters/http.js\":\"./lib/adapters/xhr.js\"},\"bugs\":{\"url\":\"https://github.com/axios/axios/issues\"},\"bundleDependencies\":false,\"bundlesize\":[{\"path\":\"./dist/axios.min.js\",\"threshold\":\"5kB\"}],\"dependencies\":{\"follow-redirects\":\"^1.10.0\"},\"deprecated\":false,\"description\":\"Promise based HTTP client for the browser and node.js\",\"devDependencies\":{\"bundlesize\":\"^0.17.0\",\"coveralls\":\"^3.0.0\",\"es6-promise\":\"^4.2.4\",\"grunt\":\"^1.0.2\",\"grunt-banner\":\"^0.6.0\",\"grunt-cli\":\"^1.2.0\",\"grunt-contrib-clean\":\"^1.1.0\",\"grunt-contrib-watch\":\"^1.0.0\",\"grunt-eslint\":\"^20.1.0\",\"grunt-karma\":\"^2.0.0\",\"grunt-mocha-test\":\"^0.13.3\",\"grunt-ts\":\"^6.0.0-beta.19\",\"grunt-webpack\":\"^1.0.18\",\"istanbul-instrumenter-loader\":\"^1.0.0\",\"jasmine-core\":\"^2.4.1\",\"karma\":\"^1.3.0\",\"karma-chrome-launcher\":\"^2.2.0\",\"karma-coverage\":\"^1.1.1\",\"karma-firefox-launcher\":\"^1.1.0\",\"karma-jasmine\":\"^1.1.1\",\"karma-jasmine-ajax\":\"^0.1.13\",\"karma-opera-launcher\":\"^1.0.0\",\"karma-safari-launcher\":\"^1.0.0\",\"karma-sauce-launcher\":\"^1.2.0\",\"karma-sinon\":\"^1.0.5\",\"karma-sourcemap-loader\":\"^0.3.7\",\"karma-webpack\":\"^1.7.0\",\"load-grunt-tasks\":\"^3.5.2\",\"minimist\":\"^1.2.0\",\"mocha\":\"^5.2.0\",\"sinon\":\"^4.5.0\",\"typescript\":\"^2.8.1\",\"url-search-params\":\"^0.10.0\",\"webpack\":\"^1.13.1\",\"webpack-dev-server\":\"^1.14.1\"},\"homepage\":\"https://github.com/axios/axios\",\"jsdelivr\":\"dist/axios.min.js\",\"keywords\":[\"xhr\",\"http\",\"ajax\",\"promise\",\"node\"],\"license\":\"MIT\",\"main\":\"index.js\",\"name\":\"axios\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/axios/axios.git\"},\"scripts\":{\"build\":\"NODE_ENV=production grunt build\",\"coveralls\":\"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js\",\"examples\":\"node ./examples/server.js\",\"fix\":\"eslint --fix lib/**/*.js\",\"postversion\":\"git push && git push --tags\",\"preversion\":\"npm test\",\"start\":\"node ./sandbox/server.js\",\"test\":\"grunt test && bundlesize\",\"version\":\"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json\"},\"typings\":\"./index.d.ts\",\"unpkg\":\"dist/axios.min.js\",\"version\":\"0.20.0\"}");
+module.exports = JSON.parse("{\"_from\":\"axios@0.21.1\",\"_id\":\"axios@0.21.1\",\"_inBundle\":false,\"_integrity\":\"sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==\",\"_location\":\"/axios\",\"_phantomChildren\":{},\"_requested\":{\"type\":\"version\",\"registry\":true,\"raw\":\"axios@0.21.1\",\"name\":\"axios\",\"escapedName\":\"axios\",\"rawSpec\":\"0.21.1\",\"saveSpec\":null,\"fetchSpec\":\"0.21.1\"},\"_requiredBy\":[\"#USER\",\"/\"],\"_resolved\":\"https://registry.npmjs.org/axios/-/axios-0.21.1.tgz\",\"_shasum\":\"22563481962f4d6bde9a76d516ef0e5d3c09b2b8\",\"_spec\":\"axios@0.21.1\",\"_where\":\"D:\\\\Git\\\\validate-json-action\",\"author\":{\"name\":\"Matt Zabriskie\"},\"browser\":{\"./lib/adapters/http.js\":\"./lib/adapters/xhr.js\"},\"bugs\":{\"url\":\"https://github.com/axios/axios/issues\"},\"bundleDependencies\":false,\"bundlesize\":[{\"path\":\"./dist/axios.min.js\",\"threshold\":\"5kB\"}],\"dependencies\":{\"follow-redirects\":\"^1.10.0\"},\"deprecated\":false,\"description\":\"Promise based HTTP client for the browser and node.js\",\"devDependencies\":{\"bundlesize\":\"^0.17.0\",\"coveralls\":\"^3.0.0\",\"es6-promise\":\"^4.2.4\",\"grunt\":\"^1.0.2\",\"grunt-banner\":\"^0.6.0\",\"grunt-cli\":\"^1.2.0\",\"grunt-contrib-clean\":\"^1.1.0\",\"grunt-contrib-watch\":\"^1.0.0\",\"grunt-eslint\":\"^20.1.0\",\"grunt-karma\":\"^2.0.0\",\"grunt-mocha-test\":\"^0.13.3\",\"grunt-ts\":\"^6.0.0-beta.19\",\"grunt-webpack\":\"^1.0.18\",\"istanbul-instrumenter-loader\":\"^1.0.0\",\"jasmine-core\":\"^2.4.1\",\"karma\":\"^1.3.0\",\"karma-chrome-launcher\":\"^2.2.0\",\"karma-coverage\":\"^1.1.1\",\"karma-firefox-launcher\":\"^1.1.0\",\"karma-jasmine\":\"^1.1.1\",\"karma-jasmine-ajax\":\"^0.1.13\",\"karma-opera-launcher\":\"^1.0.0\",\"karma-safari-launcher\":\"^1.0.0\",\"karma-sauce-launcher\":\"^1.2.0\",\"karma-sinon\":\"^1.0.5\",\"karma-sourcemap-loader\":\"^0.3.7\",\"karma-webpack\":\"^1.7.0\",\"load-grunt-tasks\":\"^3.5.2\",\"minimist\":\"^1.2.0\",\"mocha\":\"^5.2.0\",\"sinon\":\"^4.5.0\",\"typescript\":\"^2.8.1\",\"url-search-params\":\"^0.10.0\",\"webpack\":\"^1.13.1\",\"webpack-dev-server\":\"^1.14.1\"},\"homepage\":\"https://github.com/axios/axios\",\"jsdelivr\":\"dist/axios.min.js\",\"keywords\":[\"xhr\",\"http\",\"ajax\",\"promise\",\"node\"],\"license\":\"MIT\",\"main\":\"index.js\",\"name\":\"axios\",\"repository\":{\"type\":\"git\",\"url\":\"git+https://github.com/axios/axios.git\"},\"scripts\":{\"build\":\"NODE_ENV=production grunt build\",\"coveralls\":\"cat coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js\",\"examples\":\"node ./examples/server.js\",\"fix\":\"eslint --fix lib/**/*.js\",\"postversion\":\"git push && git push --tags\",\"preversion\":\"npm test\",\"start\":\"node ./sandbox/server.js\",\"test\":\"grunt test && bundlesize\",\"version\":\"npm run build && grunt version && git add -A dist && git add CHANGELOG.md bower.json package.json\"},\"typings\":\"./index.d.ts\",\"unpkg\":\"dist/axios.min.js\",\"version\":\"0.21.1\"}");
 
 /***/ }),
 
