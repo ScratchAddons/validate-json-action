@@ -290,6 +290,10 @@ async function run() {
         const configuration = configuration_1.getConfig();
         const configurationErrors = configuration_1.verifyConfigValues(configuration);
         if (configurationErrors) {
+            if (configurationErrors.length === 1 && configurationErrors[0] === '🚨 Missing JSONS input') {
+                core.info(`✅ No JSONS supplied, nothing to check`);
+                return;
+            }
             configurationErrors.forEach(e => core.error(e));
             core.setFailed('Missing configuration');
             return;
