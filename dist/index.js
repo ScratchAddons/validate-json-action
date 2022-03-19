@@ -310,7 +310,7 @@ async function run() {
         // configuration.GITHUB_WORKSPACE,
         configuration.SCHEMA, jsonAbsolutePaths);
         const invalidJsons = validationResults.filter(res => !res.valid).map(res => res.filePath);
-        core.setOutput('INVALID', invalidJsons.length > 0 ? invalidJsons.join(',') : '');
+        core.setOutput('INVALID', invalidJsons.length > 0 ? invalidJsons.join('\n') : '');
         if (invalidJsons.length > 0) {
             core.setFailed('Failed to validate all JSON files.');
         }

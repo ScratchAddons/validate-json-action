@@ -7,14 +7,13 @@ This project uses [`ajv`](https://github.com/epoberezkin/ajv), fast JSON schema 
 
 ### Inputs
 
-- `schema`: Relative file path under the repository of a JSON schema file to validate the other JSON files with. Default is: `'./schema.json'`.
-- `jsons`: One or more relative file paths under the repository (seperated by comma) of the JSON files to validate with the schema provided.
-
-> Note: `schema` is **required**, otherwise default will be used.
+- `schema`: A relative file path under the repository or a URL of a JSON schema file to validate the other JSON files with. Default is: `./schema.json`.
+- `jsons`: One or more relative file paths under the repository of the JSON files to validate with the schema provided.
+- `separator`: The separator that is used on `jsons` to separate each file. Default is `\n`.
 
 ### Outputs
 
-- `invalid`: One or more of relative file paths of the invalid JSON files, found in the repository (seperated by comma).
+- `invalid`: One or more of relative file paths of the invalid JSON files, found in the repository (seperated by newline).
 
 ### Example Workflow
 
@@ -31,14 +30,17 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Validate JSON
-        uses: docker://orrosenblatt/validate-json-action:latest
+        uses: ScratchAddons/validate-json-action@master
         env:
-          INPUT_SCHEMA: /path/to/schema.json
-          INPUT_JSONS: /path/to/file.json,/path/to/another/file.json
+          schema: path/to/schema.json
+          jsons: |
+            path/to/file.json
+            path/to/another/file.json
+          separator: '\n'
 ```
 
 
-## TODOs
+<!-- ## TODOs
 
 - [x] Initial validation action
 - [x] Docker
@@ -46,4 +48,4 @@ jobs:
 - [ ] Github workflow screenshots
 - [ ] Support `exclude` & `include` in PRs (JSONs from pattern)
 - [ ] Support `schema` & `jsons` by external reference (from S3/GitHub/etc...)
-- [ ] Support `delimiter` input 
+- [ ] Support `delimiter` input  -->
