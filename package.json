@@ -27,7 +27,7 @@
     "@actions/glob": "^0.3.0",
     "@types/jest": "^24.0.22",
     "@vercel/ncc": "^0.34.0",
-    "ajv": "^6.10.2",
+    "ajv": "^8.11.0",
     "axios": "^0.27.2",
     "better-ajv-errors": "^1.2.0",
     "chalk": "^5.0.1",
