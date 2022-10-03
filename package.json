@@ -23,7 +23,7 @@
   "author": "OrRosenblatt",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.9.1",
+    "@actions/core": "^1.10.0",
     "@actions/glob": "^0.3.0",
     "@types/jest": "^24.0.22",
     "@vercel/ncc": "^0.34.0",
