@@ -34,7 +34,7 @@
     "path": "^0.12.7"
   },
   "devDependencies": {
-    "@types/node": "^18.11.0",
+    "@types/node": "^18.11.4",
     "husky": "^8.0.1",
     "jest": "^24.9.0",
     "jest-circus": "^29.2.1",
