@@ -27,7 +27,9 @@ jobs:
         run: npm install
 
       - name: Compile
-        run: npm run pack
+        run: |
+          npm run build
+          npm run pack
         
       - name: Generate token 
         uses: tibdex/github-app-token@v1

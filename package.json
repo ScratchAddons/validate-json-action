@@ -1,5 +1,5 @@
 {
-  "name": "validate-json-action",
+  "name": "@scratchaddons/validate-json-action",
   "version": "0.0.1",
   "private": true,
   "description": "A Github action for validating JSON",
@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OrRosenblatt/validate-json-action.git"
+    "url": "git+https://github.com/ScratchAddons/validate-json-action.git"
   },
   "keywords": [
     "actions",
@@ -43,7 +43,4 @@
     "ts-jest": "^24.3.0",
     "typescript": "^3.9.10"
   },
-  "jest": {
-    "verbose": false
-  }
 }
