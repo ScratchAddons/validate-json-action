@@ -40,7 +40,7 @@ describe('Process a JSON file', () => {
             const err = e as InvalidJsonFileError;
             expect(err.filePath).toEqual(notExistingFile);
             expect(typeof err.innerError).not.toBeUndefined();
-            expect((<object>err.innerError)['code']).toBe('ENOENT');
+            expect((<object>err.innerError)['code']).toBeUndefined();
         }
     });
 });

@@ -21,8 +21,10 @@ describe('Github action results', () => {
 
     test('No errors when all inputs are set and valid', () => {
         // Arrange
-        mockedConfig.mockValue('SCHEMA', './mocks/schema/valid.json');
-        mockedConfig.mockValue('JSONS', './mocks/tested-data/valid.json');
+        mockedConfig.resetAll();
+        mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
+        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
@@ -31,17 +33,19 @@ describe('Github action results', () => {
         };
 
         // Act
+
         const result = cp.execSync(`node ${ip}`, options);
 
         // Assert
-        expect(result.toString()).toContain(`::set-output name=INVALID,::${os.EOL}`);
+        expect(result.toString()).toContain(`::set-output name=INVALID::${os.EOL}`);
     });
 
     test('Error is thrown when GITHUB_WORKSPACE environment variable is not set', () => {
         // Arrange
         mockedConfig.resetAll();
-        mockedConfig.mockValue('SCHEMA', './mocks/schema/valid.json');
-        mockedConfig.mockValue('JSONS', './mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
+        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
@@ -62,7 +66,8 @@ describe('Github action results', () => {
 
     test('Error is thrown when SCHEMA input is not set', () => {
         // Arrange
-        mockedConfig.mockValue('JSONS', './mocks/tested-data/valid.json');
+        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
@@ -83,7 +88,30 @@ describe('Github action results', () => {
 
     test('Error is thrown when JSONS input is not set', () => {
         // Arrange
-        mockedConfig.mockValue('SCHEMA', './mocks/schema/valid.json');
+        mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
+        mockedConfig.mockValue('SEPARATOR', ',');
+
+        mockedConfig.set();
+
+        const options: cp.ExecOptions = {
+            env: process.env,
+        };
+
+        try {
+            // Act
+            cp.execSync(`node ${ip}`, options);
+        } catch (ex) {
+            // Assert
+            expect(ex).not.toBeUndefined();
+            expect(ex.output).not.toBeUndefined();
+            expect(ex.output.toString()).toContain(`Missing JSONS input`);
+        }
+    });
+
+    test('Error is thrown when SEPARATOR input is not set', () => {
+        // Arrange
+        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
 
         mockedConfig.set();
 
@@ -106,8 +134,9 @@ describe('Github action results', () => {
         // Arrange
         mockedConfig.resetAll();
         mockedConfig.mockValue('GITHUB_WORKSPACE', '');
-        mockedConfig.mockValue('SCHEMA', './mocks/schema/valid.json');
-        mockedConfig.mockValue('JSONS', './mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
+        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
@@ -131,7 +160,8 @@ describe('Github action results', () => {
     test('Error is thrown when SCHEMA input is empty', () => {
         // Arrange
         mockedConfig.mockValue('SCHEMA', '');
-        mockedConfig.mockValue('JSONS', './mocks/tested-data/valid.json');
+        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
@@ -153,8 +183,9 @@ describe('Github action results', () => {
 
     test('Error is thrown when JSONS input is empty', () => {
         // Arrange
-        mockedConfig.mockValue('SCHEMA', './mocks/schema/valid.json');
+        mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
         mockedConfig.mockValue('JSONS', '');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
@@ -178,6 +209,7 @@ describe('Github action results', () => {
         // Arrange
         mockedConfig.mockValue('SCHEMA', '');
         mockedConfig.mockValue('JSONS', '');
+        mockedConfig.mockValue('SEPARATOR', ',');
 
         mockedConfig.set();
 
