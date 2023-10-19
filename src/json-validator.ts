@@ -35,7 +35,7 @@ export const validateJsons = async (
                     if (jsonData?.['$schema']) {
                         const fileSchema = await getJson(jsonData?.['$schema'])
                         validateFunction = await schemaValidator.prepareSchema(fileSchema)
-                        prettyLog(schemaPath);
+                        prettyLog(jsonData?.['$schema']);
                     }
                     // If no schema supplied, assume it is valid.
                     if (!validateFunction) return { filePath, valid: true }
