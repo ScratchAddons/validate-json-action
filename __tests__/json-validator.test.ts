@@ -3,6 +3,7 @@ import path from 'path';
 
 const validSchemaFile = path.join('schema', 'valid.json');
 const invalidSchemaFile = path.join('schema', 'invalid.json');
+const remoteSchemaFile = 'http://json-schema.org/draft-07/schema#'
 
 const validDataFile = path.join('tested-data', 'valid.json');
 const validSchemaDefinedDataFile = path.join('tested-data', 'valid_schema_defined.json');
@@ -31,6 +32,13 @@ describe('Json validation results', () => {
         expect(results.every(r => r.valid)).toBeTruthy();
         expect(results.length).toEqual(1);
         expect(results[0].filePath).toBe(path.join(mocks_dir, validSchemaDefinedDataFile))
+    });
+
+    test('successful when json which schema is defined in a remote source is valid', async () => {
+        const results = await validateJsons(remoteSchemaFile, [validSchemaFile], mocks_dir);
+        expect(results.every(r => r.valid)).toBeTruthy();
+        expect(results.length).toEqual(1);
+        expect(results[0].filePath).toBe(path.join(mocks_dir, validSchemaFile))
     });
 
     test('only one failure when one json in the list is invalid', async () => {

@@ -6,7 +6,7 @@ class SchemaValidator {
     private schemaValidator: Ajv.Ajv;
 
     constructor() {
-        this.schemaValidator = new Ajv({ allErrors: true, jsonPointers: true, loadSchema: this.loadSchema });
+        this.schemaValidator = new Ajv({ allErrors: true, jsonPointers: true, loadSchema: this.loadSchema, addUsedSchema: false });
     }
 
     public instance(): Ajv.Ajv {
