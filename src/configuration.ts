@@ -12,6 +12,7 @@ export type ConfigKeys = keyof typeof ConfigKey;
 type KeyMapping = {
     key: ConfigKey;
     setup: 'ENV' | 'INPUT';
+    required?: boolean
 };
 
 type Config = {
@@ -22,10 +23,11 @@ export const configMapping: KeyMapping[] = [
     {
         key: ConfigKey.GITHUB_WORKSPACE,
         setup: 'ENV',
+        required: true,
     },
     { key: ConfigKey.SCHEMA, setup: 'INPUT' },
-    { key: ConfigKey.JSONS, setup: 'INPUT' },
-    { key: ConfigKey.SEPARATOR, setup: 'INPUT' },
+    { key: ConfigKey.JSONS, setup: 'INPUT', required: true },
+    { key: ConfigKey.SEPARATOR, setup: 'INPUT', required: true },
 ];
 
 export function getConfig(): Config {
@@ -52,8 +54,8 @@ export function getConfig(): Config {
 export function verifyConfigValues(config: Config): string[] | undefined {
     let errors: string[] = [];
     Object.keys(config).forEach(key => {
-        if (config[key] === '') {
-            const mapping = configMapping.find(i => i.key === key);
+        const mapping = configMapping.find(i => i.key === key);
+        if (mapping?.required === true && config[key] === '') {
             errors.push(
                 `🚨 Missing ${key} ${mapping!.setup === 'ENV' ? 'environment variable' : mapping!.setup.toLowerCase()}`
             );

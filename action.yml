@@ -5,7 +5,6 @@ inputs:
   schema:
     description: 'A relative file path under the repository or a URL of a JSON schema file to validate the other JSON files with.'
     required: false
-    default: './schema.json'
   jsons:
     description: 'One or more relative file paths under the repository of the JSON files to validate with the schema provided.'
     required: true
