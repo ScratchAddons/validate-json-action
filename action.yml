@@ -16,7 +16,7 @@ outputs:
   invalid:
     description: 'One or more of relative file paths of the invalid JSON files, found in the repository (seperated by newline).'
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/index.js'
 branding: 
   icon: 'check'
