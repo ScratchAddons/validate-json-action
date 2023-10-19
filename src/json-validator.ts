@@ -18,8 +18,11 @@ export const validateJsons = async (
     // if (!/https?:\/\//.test(schemaPath)) schemaPath = path.join(sourceDir, schemaPath);
     if (!/https?:\/\//.test(schemaPath)) schemaPath = sourceDir ? path.join(sourceDir, schemaPath) : schemaPath;
     try {
-        const globalSchema = await getJson(schemaPath);
-        let globalValidateFunction = await schemaValidator.prepareSchema(globalSchema);
+        let globalValidateFunction, globalSchema;
+        if (schemaPath) {
+            globalSchema = await getJson(schemaPath);
+            globalValidateFunction = await schemaValidator.prepareSchema(globalSchema);
+        }
         prettyLog(schemaPath);
         return await Promise.all(
             // jsonRelativePaths.map(async relativePath => {
@@ -33,17 +36,19 @@ export const validateJsons = async (
                         const fileSchema = await getJson(jsonData?.['$schema'])
                         validateFunction = await schemaValidator.prepareSchema(fileSchema)
                     }
+                    // If no schema supplied, assume it is valid.
+                    if (!validateFunction) return { filePath, valid: true }
                     const result = await schemaValidator.validate(jsonData, validateFunction);
                     prettyLog(filePath);
                     return { filePath, valid: result };
                 } catch (e) {
-                    prettyLog(filePath, e);
+                    prettyLog(filePath, <Error>e);
                     return { filePath, valid: false };
                 }
             })
         );
     } catch (err) {
-        prettyLog(schemaPath, err);
+        prettyLog(schemaPath, <Error>err);
         return [{ filePath: schemaPath, valid: false }];
     }
 };

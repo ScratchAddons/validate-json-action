@@ -42,7 +42,7 @@ exports.configMapping = [
         required: true,
     },
     { key: ConfigKey.SCHEMA, setup: 'INPUT' },
-    { key: ConfigKey.JSONS, setup: 'INPUT', required: true },
+    { key: ConfigKey.JSONS, setup: 'INPUT', },
     { key: ConfigKey.SEPARATOR, setup: 'INPUT', required: true },
 ];
 function getConfig() {

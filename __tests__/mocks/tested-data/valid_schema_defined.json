@@ -1,0 +1,5 @@
+{
+    "$schema": "./__tests__/mocks/schema/valid.json",
+    "foo": "abc", 
+    "bar": 2 
+}

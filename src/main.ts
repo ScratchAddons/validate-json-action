@@ -11,12 +11,13 @@ async function run() {
         const configurationErrors = verifyConfigValues(configuration);
 
         if (configurationErrors) {
-            if (configurationErrors.length === 1 && configurationErrors[0] === '🚨 Missing JSONS input') {
-                core.info(`✅ No JSONS supplied, nothing to check`);
-                return;
-            }
             configurationErrors.forEach(e => core.error(e));
             core.setFailed('Missing configuration');
+            return;
+        }
+
+        if (!configuration.JSONS) {
+            core.info(`✅ No JSONS supplied, nothing to check`);
             return;
         }
 
@@ -50,7 +51,7 @@ async function run() {
             core.info(`✅ All files were validated successfully.`);
         }
     } catch (error) {
-        core.setFailed(error.message);
+        core.setFailed((<Error>error).message);
     }
 }
 

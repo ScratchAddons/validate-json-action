@@ -5,15 +5,32 @@ const validSchemaFile = path.join('schema', 'valid.json');
 const invalidSchemaFile = path.join('schema', 'invalid.json');
 
 const validDataFile = path.join('tested-data', 'valid.json');
+const validSchemaDefinedDataFile = path.join('tested-data', 'valid_schema_defined.json');
 const invalidDataFile = path.join('tested-data', 'invalid_by_schema.json');
 
 const mocks_dir = path.join('__tests__', 'mocks');
 
 describe('Json validation results', () => {
     test('all successful when all jsons in the list are valid', async () => {
-        const results = await validateJsons(validSchemaFile, [validDataFile, validDataFile], mocks_dir);
+        const results = await validateJsons(validSchemaFile, [validDataFile, validSchemaDefinedDataFile], mocks_dir);
         expect(results.every(r => r.valid)).toBeTruthy();
-        expect(results.every(r => r.filePath === path.join(mocks_dir, validDataFile))).toBeTruthy();
+        expect(results.length).toEqual(2);
+        expect(results[0].filePath).toBe(path.join(mocks_dir, validDataFile))
+        expect(results[1].filePath).toBe(path.join(mocks_dir, validSchemaDefinedDataFile))
+    });
+
+    test('successful when json which schema is defined outside is valid', async () => {
+        const results = await validateJsons(validSchemaFile, [validDataFile], mocks_dir);
+        expect(results.every(r => r.valid)).toBeTruthy();
+        expect(results.length).toEqual(1);
+        expect(results[0].filePath).toBe(path.join(mocks_dir, validDataFile))
+    });
+
+    test('successful when json which schema is defined inside is valid', async () => {
+        const results = await validateJsons(validSchemaFile, [validSchemaDefinedDataFile], mocks_dir);
+        expect(results.every(r => r.valid)).toBeTruthy();
+        expect(results.length).toEqual(1);
+        expect(results[0].filePath).toBe(path.join(mocks_dir, validSchemaDefinedDataFile))
     });
 
     test('only one failure when one json in the list is invalid', async () => {

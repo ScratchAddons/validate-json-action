@@ -7,7 +7,7 @@ inputs:
     required: false
   jsons:
     description: 'One or more relative file paths under the repository of the JSON files to validate with the schema provided.'
-    required: true
+    required: false
   separator:
     description: 'The separator that is used on `jsons` to separate each file.'
     required: false

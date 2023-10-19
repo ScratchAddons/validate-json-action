@@ -26,7 +26,7 @@ export const configMapping: KeyMapping[] = [
         required: true,
     },
     { key: ConfigKey.SCHEMA, setup: 'INPUT' },
-    { key: ConfigKey.JSONS, setup: 'INPUT', required: true },
+    { key: ConfigKey.JSONS, setup: 'INPUT' },
     { key: ConfigKey.SEPARATOR, setup: 'INPUT', required: true },
 ];
 
@@ -55,7 +55,7 @@ export function verifyConfigValues(config: Config): string[] | undefined {
     let errors: string[] = [];
     Object.keys(config).forEach(key => {
         const mapping = configMapping.find(i => i.key === key);
-        if (mapping?.required === true && config[key] === '') {
+        if (mapping?.required && !config[key]) {
             errors.push(
                 `🚨 Missing ${key} ${mapping!.setup === 'ENV' ? 'environment variable' : mapping!.setup.toLowerCase()}`
             );

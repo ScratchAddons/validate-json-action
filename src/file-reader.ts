@@ -16,6 +16,6 @@ export const getJson = async (filePath: string): Promise<object> => {
         const json = needsDownload ? (await axios.get(filePath)).data : JSON.parse(await getFile(filePath));
         return json;
     } catch (ex) {
-        throw new InvalidJsonFileError(filePath, ex);
+        throw new InvalidJsonFileError(filePath, <Error>ex);
     }
 };

@@ -7,7 +7,7 @@ import { MockedConfig } from './mocks/mocked-config';
 let mockedConfig: MockedConfig;
 let ip: string;
 
-describe('Github action results', () => {
+describe('GitHub action results', () => {
     beforeEach(() => {
         ip = path.join(__dirname, '..', 'lib', 'main.js');
         mockedConfig = new MockedConfig();
@@ -21,7 +21,6 @@ describe('Github action results', () => {
 
     test('No errors when all inputs are set and valid', () => {
         // Arrange
-        mockedConfig.resetAll();
         mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
         mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
         mockedConfig.mockValue('SEPARATOR', ',');
@@ -33,7 +32,6 @@ describe('Github action results', () => {
         };
 
         // Act
-
         const result = cp.execSync(`node ${ip}`, options);
 
         // Assert
@@ -56,7 +54,7 @@ describe('Github action results', () => {
         try {
             // Act
             cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
+        } catch (ex: any) {
             // Assert
             expect(ex).not.toBeUndefined();
             expect(ex.output).not.toBeUndefined();
@@ -64,29 +62,7 @@ describe('Github action results', () => {
         }
     });
 
-    test('Error is thrown when SCHEMA input is not set', () => {
-        // Arrange
-        mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
-        mockedConfig.mockValue('SEPARATOR', ',');
-
-        mockedConfig.set();
-
-        const options: cp.ExecOptions = {
-            env: process.env,
-        };
-
-        try {
-            // Act
-            cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
-            // Assert
-            expect(ex).not.toBeUndefined();
-            expect(ex.output).not.toBeUndefined();
-            expect(ex.output.toString()).toContain(`Missing SCHEMA input`);
-        }
-    });
-
-    test('Error is thrown when JSONS input is not set', () => {
+    test('No errors (by grace) when JSONS input is not set', () => {
         // Arrange
         mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
         mockedConfig.mockValue('SEPARATOR', ',');
@@ -97,18 +73,13 @@ describe('Github action results', () => {
             env: process.env,
         };
 
-        try {
-            // Act
-            cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
-            // Assert
-            expect(ex).not.toBeUndefined();
-            expect(ex.output).not.toBeUndefined();
-            expect(ex.output.toString()).toContain(`Missing JSONS input`);
-        }
+        // Act
+        const result = cp.execSync(`node ${ip}`, options);
+        // Assert
+        expect(result.toString()).toContain(`No JSONS supplied`);
     });
 
-    test('Error is thrown when SEPARATOR input is not set', () => {
+    test('No errors (by grace) when SEPARATOR input is not set', () => {
         // Arrange
         mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
         mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
@@ -119,15 +90,10 @@ describe('Github action results', () => {
             env: process.env,
         };
 
-        try {
-            // Act
-            cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
-            // Assert
-            expect(ex).not.toBeUndefined();
-            expect(ex.output).not.toBeUndefined();
-            expect(ex.output.toString()).toContain(`Missing JSONS input`);
-        }
+        // Act
+        const result = cp.execSync(`node ${ip}`, options);
+        // Assert
+        expect(result.toString()).toContain(`validated successfully`);
     });
 
     test('Error is thrown when GITHUB_WORKSPACE environment variable is empty', () => {
@@ -147,7 +113,7 @@ describe('Github action results', () => {
         try {
             // Act
             cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
+        } catch (ex: any) {
             // Assert
             expect(ex).not.toBeUndefined();
             expect(ex.output).not.toBeUndefined();
@@ -157,7 +123,7 @@ describe('Github action results', () => {
         }
     });
 
-    test('Error is thrown when SCHEMA input is empty', () => {
+    test('No errors (by grace) when SCHEMA input is empty', () => {
         // Arrange
         mockedConfig.mockValue('SCHEMA', '');
         mockedConfig.mockValue('JSONS', './__tests__/mocks/tested-data/valid.json');
@@ -169,19 +135,13 @@ describe('Github action results', () => {
             env: process.env,
         };
 
-        try {
-            // Act
-            cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
-            // Assert
-            expect(ex).not.toBeUndefined();
-            expect(ex.output).not.toBeUndefined();
-            expect(ex.output.toString()).toContain(`Missing SCHEMA input`);
-            expect(ex.output.toString()).not.toContain(`Missing JSONS input`);
-        }
+        // Act
+        const result = cp.execSync(`node ${ip}`, options);
+        // Assert
+        expect(result.toString()).toContain(`validated successfully`);
     });
 
-    test('Error is thrown when JSONS input is empty', () => {
+    test('No errors (by grace) when JSONS input is empty', () => {
         // Arrange
         mockedConfig.mockValue('SCHEMA', './__tests__/mocks/schema/valid.json');
         mockedConfig.mockValue('JSONS', '');
@@ -193,19 +153,13 @@ describe('Github action results', () => {
             env: process.env,
         };
 
-        try {
-            // Act
-            cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
-            // Assert
-            expect(ex).not.toBeUndefined();
-            expect(ex.output).not.toBeUndefined();
-            expect(ex.output.toString()).not.toContain(`Missing SCHEMA input`);
-            expect(ex.output.toString()).toContain(`Missing JSONS input`);
-        }
+        // Act
+        const result = cp.execSync(`node ${ip}`, options);
+        // Assert
+        expect(result.toString()).toContain(`No JSONS supplied`);
     });
 
-    test('Error is thrown when both SCHEMA and JSONS inputs are empty', () => {
+    test('No errors (by grace) when both SCHEMA and JSONS inputs are empty', () => {
         // Arrange
         mockedConfig.mockValue('SCHEMA', '');
         mockedConfig.mockValue('JSONS', '');
@@ -217,15 +171,9 @@ describe('Github action results', () => {
             env: process.env,
         };
 
-        try {
-            // Act
-            cp.execSync(`node ${ip}`, options);
-        } catch (ex) {
-            // Assert
-            expect(ex).not.toBeUndefined();
-            expect(ex.output).not.toBeUndefined();
-            expect(ex.output.toString()).toContain(`Missing SCHEMA input`);
-            expect(ex.output.toString()).toContain(`Missing JSONS input`);
-        }
+        // Act
+        const result = cp.execSync(`node ${ip}`, options);
+        // Assert
+        expect(result.toString()).toContain(`No JSONS supplied`);
     });
 });
