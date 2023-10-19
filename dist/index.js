@@ -196,7 +196,7 @@ jsonPaths, sourceDir) => {
                 if (jsonData === null || jsonData === void 0 ? void 0 : jsonData['$schema']) {
                     const fileSchema = await (0, file_reader_1.getJson)(jsonData === null || jsonData === void 0 ? void 0 : jsonData['$schema']);
                     validateFunction = await schema_validator_1.schemaValidator.prepareSchema(fileSchema);
-                    (0, logger_1.prettyLog)(schemaPath);
+                    (0, logger_1.prettyLog)(jsonData === null || jsonData === void 0 ? void 0 : jsonData['$schema']);
                 }
                 // If no schema supplied, assume it is valid.
                 if (!validateFunction)
